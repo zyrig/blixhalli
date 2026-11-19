@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Blixhalli training times{% endblock %}</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 900px; margin: 0 auto; padding: 16px; }
+    nav a { margin-right: 12px; }
+    .day { border-top: 1px solid #ccc; padding: 8px 0; }
+    .booking { background: #eef4ff; border-radius: 6px; padding: 6px 10px; margin: 4px 0; }
+    .empty { color: #888; }
+    .errorlist { color: #b00020; }
+  </style>
+</head>
+<body>
+  <nav><a href="/">Schedule</a><a href="/new/">Book a time</a><a href="/admin/">Admin</a></nav>
+  {% block content %}{% endblock %}
+</body>
+</html>

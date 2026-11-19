@@ -1,0 +1,16 @@
+{% extends "bookings/base.html" %}
+{% block content %}
+<h1>Week of {{ monday|date:"j M Y" }}</h1>
+<p><a href="?week={{ prev_week|date:'Y-m-d' }}">&larr; Previous week</a> |
+   <a href="?week={{ next_week|date:'Y-m-d' }}">Next week &rarr;</a></p>
+{% for day in schedule %}
+  <div class="day">
+    <strong>{{ day.date|date:"l j.n." }}</strong>
+    {% for b in day.bookings %}
+      <div class="booking">{{ b.start|time:"H:i" }}–{{ b.end|time:"H:i" }} · {{ b.area }} · {{ b.team }}{% if b.notes %} · {{ b.notes }}{% endif %}</div>
+    {% empty %}
+      <div class="empty">No bookings</div>
+    {% endfor %}
+  </div>
+{% endfor %}
+{% endblock %}
