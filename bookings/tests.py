@@ -322,3 +322,29 @@ class LeaderPermissionAndWeekTests(TestCase):
     def test_past_dates_rejected(self):
         r = self.book(self.j12, 20, 21, date=datetime.date(2020, 1, 6))
         self.assertContains(r, "Datoen har vore")
+
+
+class DeploySetupTests(TestCase):
+    """Kommandoane som build.sh køyrer ved kvar deploy på Render."""
+
+    def test_seed_if_empty_loads_once(self):
+        call_command("seed_if_empty", stdout=open("/dev/null", "w"))
+        count = TrainingSlot.objects.count()
+        self.assertGreater(count, 0)
+        call_command("seed_if_empty", stdout=open("/dev/null", "w"))
+        self.assertEqual(TrainingSlot.objects.count(), count)
+
+    def test_ensure_admin_creates_once_and_never_changes_password(self):
+        import os
+        from unittest import mock
+        env = {"DJANGO_ADMIN_EMAIL": "Leiar@Example.com", "DJANGO_ADMIN_PASSWORD": "fyrste-passord"}
+        with mock.patch.dict(os.environ, env):
+            call_command("ensure_admin", stdout=open("/dev/null", "w"))
+        admin = User.objects.get(username="leiar@example.com")
+        self.assertTrue(admin.is_superuser and admin.is_staff)
+        admin.set_password("nytt-passord")
+        admin.save()
+        with mock.patch.dict(os.environ, env):
+            call_command("ensure_admin", stdout=open("/dev/null", "w"))
+        admin.refresh_from_db()
+        self.assertTrue(admin.check_password("nytt-passord"))

@@ -1,0 +1,34 @@
+# Oppskrift for Render (render.com). Opne Render → New → Blueprint, og vel dette repoet.
+# Verdiar med «sync: false» fyller du inn sjølv i Render når du opprettar tenesta.
+services:
+  - type: web
+    name: blixhalli
+    runtime: python
+    region: frankfurt
+    plan: free            # byt til «starter» for ein app som alltid er vaken (ikkje søv)
+    branch: main
+    buildCommand: ./build.sh
+    startCommand: gunicorn config.wsgi:application --workers 2 --timeout 60
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13.5"
+      - key: DJANGO_DEBUG
+        value: "0"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_ALLOWED_HOSTS
+        value: ""          # Render legg til eiga adresse automatisk. Legg inn eige domene her seinare.
+      - key: DATABASE_URL
+        sync: false        # Supabase → Connect → «Session pooler»
+      - key: DJANGO_ADMIN_EMAIL
+        sync: false        # e-posten din: blir første administrator
+      - key: DJANGO_ADMIN_PASSWORD
+        sync: false        # mellombels passord, endre det etter første innlogging
+      - key: DJANGO_FROM_EMAIL
+        sync: false
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false

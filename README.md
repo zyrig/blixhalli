@@ -111,15 +111,61 @@ python manage.py makemigrations
 python manage.py migrate
 ```
 
-## Leggje appen ut på nett
+## Leggje appen ut på nett (Render + Supabase)
 
-Appen les desse miljøvariablane, slik at han kan køyre trygt på ein server:
+Appen køyrer på [Render](https://render.com) og lagrar data i [Supabase](https://supabase.com)
+(PostgreSQL). Begge kan liggje i Frankfurt, så data blir verande i EU.
+Oppskrifta for Render ligg i `render.yaml`, og `build.sh` køyrer ved kvar ny versjon.
+
+**1. Database i Supabase**
+1. Lag eit nytt prosjekt i Supabase. Vel regionen **Central EU (Frankfurt)**, og noter databasepassordet.
+2. Trykk **Connect** øvst i prosjektet og vel **Session pooler**. Kopier adressa, som ser slik ut:
+   `postgresql://postgres.<prosjekt>:[YOUR-PASSWORD]@aws-0-eu-central-1.pooler.supabase.com:5432/postgres`
+3. Byt ut `[YOUR-PASSWORD]` med databasepassordet.
+
+Bruk «Session pooler» og ikkje «Direct connection». Render brukar berre IPv4, og den direkte
+tilkoplinga til Supabase er berre IPv6.
+
+**2. Appen i Render**
+1. Logg inn på Render med GitHub-kontoen din.
+2. Vel **New → Blueprint**, og vel repoet `blixhalli`.
+3. Fyll inn verdiane Render spør om:
+
+| Variabel | Kva du skriv |
+|---|---|
+| `DATABASE_URL` | adressa frå Supabase (steg 1) |
+| `DJANGO_ADMIN_EMAIL` | e-postadressa di. Du blir første administrator. |
+| `DJANGO_ADMIN_PASSWORD` | eit mellombels passord. Endre det etter første innlogging. |
+| `DJANGO_FROM_EMAIL`, `EMAIL_HOST`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` | e-postoppsett (sjå under). Kan stå tomme i starten. |
+
+4. Trykk **Deploy**. Første gong blir tabellane laga, tidene frå `data/timeplan.json`
+   lasta inn og administratoren oppretta. Appen får ei adresse som `https://blixhalli.onrender.com`.
+
+Kvar gong noko blir pusha til `main`, legg Render ut den nye versjonen automatisk.
+
+**E-post** (invitasjonar, «Gløymt passord», varsel). Utan dette blir e-post berre skriven til
+loggen i Render. Det enklaste er Gmail med eit *app-passord* (krev totrinnsinnlogging på Google-kontoen):
+`EMAIL_HOST=smtp.gmail.com`, `EMAIL_HOST_USER=<gmail-adressa>`, `EMAIL_HOST_PASSWORD=<app-passordet>`,
+`DJANGO_FROM_EMAIL=Treningstider Blixhalli <gmail-adressa>`. Seinare kan ei teneste som Brevo eller
+Resend og ei eiga avsendaradresse gi betre levering.
+
+**Godt å vite**
+- **Gratisvarianten av Render** «søv» etter 15 minutt utan besøk, og første besøk etterpå tek om lag
+  eitt minutt. Byt `plan: free` til `plan: starter` i `render.yaml` (om lag 7 dollar i månaden)
+  for ein app som alltid er vaken.
+- **Gratisprosjekt i Supabase** kan bli pausa etter ein periode utan bruk. Sjå vilkåra hos Supabase.
+- **Eige domene**, t.d. `treningstider.idrettslaget.no`: legg det til under *Settings → Custom Domains*
+  i Render, og legg domenet til i `DJANGO_ALLOWED_HOSTS`.
+
+**Miljøvariablar**
 
 | Variabel | Døme |
 |---|---|
-| `DJANGO_SECRET_KEY` | ein lang, tilfeldig og hemmeleg tekst |
-| `DJANGO_DEBUG` | `0` |
-| `DJANGO_ALLOWED_HOSTS` | `blixhalli.example.no` |
+| `DATABASE_URL` | `postgresql://…` (tom = lokal SQLite-fil) |
+| `DJANGO_SECRET_KEY` | ein lang, tilfeldig og hemmeleg tekst (Render lagar han) |
+| `DJANGO_DEBUG` | `0` i drift |
+| `DJANGO_ALLOWED_HOSTS` | `treningstider.idrettslaget.no` (Render-adressa blir lagd til automatisk) |
+| `DJANGO_ADMIN_EMAIL`, `DJANGO_ADMIN_PASSWORD` | første administrator |
 | `DJANGO_FROM_EMAIL` | `Treningstider Blixhalli <post@example.no>` |
 | `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` | SMTP-tenaren som sender e-post |
 
@@ -130,7 +176,6 @@ Appen les desse miljøvariablane, slik at han kan køyre trygt på ein server:
 
 ## Moglege neste steg
 
-- Leggje appen ut på nett (t.d. PythonAnywhere eller Fly.io)
 - Avlysingar og enkeltbookingar (kamp, cup, utleige) oppå den faste vekeplanen
 - Innlogging per lag, så kvar trenar kan endre sine eigne tider
 - Utskriftsvenleg versjon / eksport til PDF
