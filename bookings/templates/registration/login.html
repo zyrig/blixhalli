@@ -1,0 +1,15 @@
+{% extends "bookings/base.html" %}
+{% block title %}Logg inn – Blixhalli{% endblock %}
+{% block content %}
+<div class="narrow">
+  <h2>Logg inn</h2>
+  <form method="post" class="card">
+    {% csrf_token %}
+    {{ form.as_div }}
+    <input type="hidden" name="next" value="{{ next }}">
+    <button type="submit" class="btn">Logg inn</button>
+  </form>
+  <p><a href="{% url 'password_reset' %}">Gløymt passord?</a></p>
+  <p>Trenar eller lagleiar utan brukar? <a href="{% url 'request_account' %}">Be om brukar</a>.</p>
+</div>
+{% endblock %}

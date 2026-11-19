@@ -136,3 +136,89 @@ class StaticExportTests(TestCase):
             html = open(os.path.join(out, "index.html"), encoding="utf-8").read()
             self.assertNotIn('href="/', html)   # GitHub Pages ligg under /blixhalli/
             self.assertNotIn("Logg inn", html)
+
+
+class AccountTests(TestCase):
+    """Steg 1: brukarar, lagleiarar og førespurnader om brukar."""
+
+    def setUp(self):
+        self.season = Season.objects.create(name="2025/2026", published=True)
+        self.j12 = Group.objects.create(name="Handball J12")
+        self.g8 = Group.objects.create(name="Fotball G8")
+        TrainingSlot.objects.create(season=self.season, group=self.j12, weekday=0, start_time=t(17), end_time=t(18))
+        TrainingSlot.objects.create(season=self.season, group=self.g8, weekday=1, start_time=t(17), end_time=t(18))
+        self.admin = User.objects.create_user("admin@example.com", "admin@example.com", "pw", is_staff=True, is_superuser=True)
+
+    def last_link(self):
+        from django.core import mail
+        import re
+        return re.search(r"http://testserver(/passord/ny/\S+)", mail.outbox[-1].body).group(1)
+
+    def test_request_account_and_get_approved_then_set_password_and_log_in(self):
+        from django.core import mail
+        from .models import AccountRequest
+        r = self.client.post("/be-om-brukar/", {"name": "Kari Nordmann", "email": "Kari@Example.com",
+                                                "groups": [self.j12.pk]})
+        self.assertContains(r, "Takk, Kari Nordmann")
+        req = AccountRequest.objects.get()
+        self.assertEqual((req.email, req.status), ("kari@example.com", "pending"))
+        self.assertIn("Kari Nordmann", mail.outbox[-1].subject)  # administrator får varsel
+
+        # Administrator godkjenner via admin-handlinga
+        self.client.force_login(self.admin)
+        self.client.post("/admin/bookings/accountrequest/", {"action": "approve_selected", "_selected_action": [req.pk]})
+        self.client.logout()
+        req.refresh_from_db()
+        self.assertEqual(req.status, "approved")
+        self.assertEqual(mail.outbox[-1].to, ["kari@example.com"])
+        self.assertIn("Handball J12", mail.outbox[-1].body)
+
+        # Kari lagar passord via lenkja og loggar inn
+        r = self.client.get(self.last_link(), follow=True)
+        self.assertContains(r, "Lag passord")
+        self.client.post(r.redirect_chain[-1][0], {"new_password1": "Sterkt-passord-42", "new_password2": "Sterkt-passord-42"})
+        r = self.client.post("/logg-inn/", {"username": "KARI@example.com", "password": "Sterkt-passord-42"}, follow=True)
+        self.assertContains(r, "Hei, Kari")
+        self.assertContains(r, "Handball J12")
+        self.assertNotContains(r, "Fotball G8")  # ser berre sine eigne lag
+
+    def test_reject_sends_email_with_comment(self):
+        from django.core import mail
+        from .models import AccountRequest
+        req = AccountRequest.objects.create(name="Ola", email="ola@example.com", other_group="Ukjent lag",
+                                            admin_comment="Ta kontakt med styret.")
+        self.client.force_login(self.admin)
+        self.client.post("/admin/bookings/accountrequest/", {"action": "reject_selected", "_selected_action": [req.pk]})
+        req.refresh_from_db()
+        self.assertEqual(req.status, "rejected")
+        self.assertIn("Ta kontakt med styret.", mail.outbox[-1].body)
+
+    def test_request_needs_a_group_and_no_duplicates(self):
+        r = self.client.post("/be-om-brukar/", {"name": "Per", "email": "per@example.com"})
+        self.assertContains(r, "Vel minst eitt lag")
+        r = self.client.post("/be-om-brukar/", {"name": "Admin", "email": "ADMIN@example.com", "other_group": "X"})
+        self.assertContains(r, "Det finst alt ein brukar")
+
+    def test_admin_can_invite_user_and_others_cannot(self):
+        from django.core import mail
+        self.client.force_login(self.admin)
+        r = self.client.post("/inviter/", {"name": "Lise Lagleiar", "email": "lise@example.com",
+                                          "groups": [self.g8.pk]}, follow=True)
+        self.assertContains(r, "Invitasjon sendt til lise@example.com")
+        lise = User.objects.get(username="lise@example.com")
+        self.assertFalse(lise.has_usable_password())
+        self.assertEqual(list(lise.led_groups.all()), [self.g8])
+        self.assertIn("/passord/ny/", mail.outbox[-1].body)
+
+        self.client.force_login(lise)
+        self.assertNotEqual(self.client.get("/inviter/").status_code, 200)
+
+    def test_forgot_password_works_for_invited_user_without_password(self):
+        from django.core import mail
+        from . import accounts
+        accounts.create_or_update_user("Nils", "nils@example.com", [])
+        self.client.post("/passord/gloymt/", {"email": "nils@example.com"})
+        self.assertEqual(mail.outbox[-1].to, ["nils@example.com"])
+
+    def test_mine_requires_login(self):
+        self.assertRedirects(self.client.get("/mine/"), "/logg-inn/?next=/mine/")

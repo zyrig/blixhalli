@@ -1,0 +1,9 @@
+{% extends "bookings/base.html" %}
+{% block title %}Be om brukar – Blixhalli{% endblock %}
+{% block content %}
+<div class="narrow">
+  <h2>Be om brukar</h2>
+  <p>For trenarar og lagleiarar som skal søkje om treningstider. Ein administrator godkjenner førespurnaden, og du får ei lenkje på e-post for å lage passord.</p>
+  <form method="post" class="card">{% csrf_token %}{{ form.as_div }}<button type="submit" class="btn">Send førespurnad</button></form>
+</div>
+{% endblock %}

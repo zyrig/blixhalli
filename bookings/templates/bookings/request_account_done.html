@@ -1,0 +1,6 @@
+{% extends "bookings/base.html" %}
+{% block content %}
+<div class="narrow"><h2>Takk, {{ account_request.name }}!</h2>
+<p>Førespurnaden din er sendt. Når ein administrator har godkjent han, får du ein e-post til <strong>{{ account_request.email }}</strong> med ei lenkje for å lage passord.</p>
+<p><a href="/">Tilbake til vekeplanen</a></p></div>
+{% endblock %}

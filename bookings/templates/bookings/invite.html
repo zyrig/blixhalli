@@ -1,0 +1,10 @@
+{% extends "bookings/base.html" %}
+{% block title %}Inviter brukar – Blixhalli{% endblock %}
+{% block content %}
+<div class="narrow">
+  <h2>Inviter brukar</h2>
+  <p>Brukaren får ein e-post med ei lenkje for å lage passord. Finst brukaren alt, blir han lagt til som lagleiar for laga du vel, og får ny lenkje.</p>
+  <form method="post" class="card">{% csrf_token %}{{ form.as_div }}<button type="submit" class="btn">Send invitasjon</button></form>
+  <p><a href="/admin/bookings/accountrequest/?status__exact=pending">Førespurnader som ventar</a></p>
+</div>
+{% endblock %}

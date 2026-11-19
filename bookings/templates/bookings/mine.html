@@ -1,0 +1,30 @@
+{% extends "bookings/base.html" %}
+{% block title %}Mine lag – Blixhalli{% endblock %}
+{% block content %}
+<div class="narrow" style="max-width:760px">
+  <h2>Hei, {{ user.first_name|default:user.email }}</h2>
+  {% if pending_requests %}
+    <div class="card"><strong>{{ pending_requests }} førespurnad{{ pending_requests|pluralize:",er" }} om brukar ventar.</strong>
+      <a href="/admin/bookings/accountrequest/?status__exact=pending">Sjå og godkjenn</a></div>
+  {% endif %}
+  <h3>Laga mine</h3>
+  {% if groups %}
+    <p>{% for g in groups %}{{ g.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+  {% else %}
+    <p class="muted">Du er ikkje lagleiar for noko lag enno. Ta kontakt med ein administrator.</p>
+  {% endif %}
+  {% if slots %}
+  <h3>Treningstidene våre</h3>
+  <div class="card" style="padding:0 8px; overflow-x:auto">
+  <table class="list">
+    <tr><th>Sesong</th><th>Dag</th><th>Tid</th><th>Sal</th><th>Lag</th></tr>
+    {% for s in slots %}
+      <tr><td>{{ s.season }}</td><td>{{ s.get_weekday_display }}</td>
+          <td>{{ s.start_time|time:"H:i" }}–{{ s.end_time|time:"H:i" }}</td>
+          <td>{{ s.sections_label }}</td><td>{{ s.group }}{% if s.tentative %} <span class="muted">(ikkje avklart)</span>{% endif %}</td></tr>
+    {% endfor %}
+  </table></div>
+  {% endif %}
+  <p class="muted">Søknad om nye tider og avlysingar kjem snart.</p>
+</div>
+{% endblock %}

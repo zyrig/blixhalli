@@ -34,13 +34,13 @@ ALLOWED_HOSTS = [h for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,12
 # Application definition
 
 INSTALLED_APPS = [
+    "bookings",  # først, slik at våre malar for innlogging/passord blir brukte framfor admin sine
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "bookings",
 ]
 
 MIDDLEWARE = [
@@ -124,3 +124,20 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Innlogging
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "mine"
+LOGOUT_REDIRECT_URL = "schedule"
+PASSWORD_RESET_TIMEOUT = 7 * 24 * 3600  # lenkjer for å lage passord varer i 7 dagar
+
+# E-post. Utan EMAIL_HOST blir e-post skriven ut i terminalen i staden for å bli sendt.
+DEFAULT_FROM_EMAIL = os.environ.get("DJANGO_FROM_EMAIL", "Treningstider Blixhalli <noreply@localhost>")
+if os.environ.get("EMAIL_HOST"):
+    EMAIL_HOST = os.environ["EMAIL_HOST"]
+    EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+    EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+    EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+    EMAIL_USE_TLS = True
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"

@@ -3,6 +3,7 @@
 Kvar klasse blir ein tabell i databasen. Django lagar og oppdaterer tabellane
 via "migrasjonar" (python manage.py makemigrations / migrate).
 """
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -62,6 +63,10 @@ class Group(models.Model):
     name = models.CharField("namn", max_length=200, unique=True)
     category = models.CharField("kategori", max_length=20, choices=CATEGORIES, default="anna")
     contact = models.CharField("kontaktperson", max_length=200, blank=True)
+    leaders = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name="led_groups", verbose_name="lagleiarar",
+        help_text="Brukarar som kan søkje om tider for denne gruppa.",
+    )
 
     class Meta:
         ordering = ["name"]
@@ -152,3 +157,39 @@ class TrainingSlot(models.Model):
         if b_to and a_from and b_to < a_from:
             return False
         return True
+
+
+class AccountRequest(models.Model):
+    """Ein trenar eller lagleiar som ber om brukar. Administrator godkjenner."""
+
+    PENDING, APPROVED, REJECTED = "pending", "approved", "rejected"
+    STATUSES = [(PENDING, "Ventar"), (APPROVED, "Godkjend"), (REJECTED, "Avslått")]
+
+    name = models.CharField("namn", max_length=200)
+    email = models.EmailField("e-post")
+    phone = models.CharField("telefon", max_length=30, blank=True)
+    groups = models.ManyToManyField(Group, blank=True, verbose_name="lag")
+    other_group = models.CharField(
+        "anna lag", max_length=200, blank=True, help_text="Viss laget ditt ikkje står i lista."
+    )
+    message = models.TextField("melding", blank=True)
+    status = models.CharField("status", max_length=10, choices=STATUSES, default=PENDING)
+    created_at = models.DateTimeField("motteke", auto_now_add=True)
+    handled_at = models.DateTimeField("handsama", null=True, blank=True)
+    handled_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="+", verbose_name="handsama av",
+    )
+    admin_comment = models.TextField("kommentar frå administrator", blank=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="account_requests", verbose_name="brukar",
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "førespurnad om brukar"
+        verbose_name_plural = "førespurnader om brukar"
+
+    def __str__(self):
+        return f"{self.name} <{self.email}>"

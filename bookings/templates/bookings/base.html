@@ -29,6 +29,27 @@
     header a { color: inherit; }
     main { padding: 16px; max-width: 1400px; margin: 0 auto; }
     a { color: var(--accent); }
+    .linklike { background: none; border: 0; color: inherit; text-decoration: underline; font: inherit; cursor: pointer; padding: 0; }
+    .narrow { max-width: 520px; margin: 0 auto; }
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    form p, form > div { margin: 0 0 14px; }
+    label { display: block; font-weight: 600; margin-bottom: 4px; }
+    input[type=text], input[type=email], input[type=password], input[type=tel], textarea, select.wide {
+      width: 100%; font: inherit; padding: 10px; border-radius: 8px; border: 1px solid var(--line);
+      background: var(--bg); color: var(--text); }
+    ul#id_groups, form ul:not(.errorlist) { list-style: none; padding: 0; margin: 0; max-height: 260px; overflow-y: auto;
+      border: 1px solid var(--line); border-radius: 8px; }
+    form ul:not(.errorlist) li label { font-weight: 400; padding: 8px 10px; display: flex; gap: 8px; align-items: center; margin: 0; }
+    form ul:not(.errorlist) li + li { border-top: 1px solid var(--line); }
+    .helptext { display: block; font-size: .85rem; color: var(--muted); }
+    .errorlist { color: #c0392b; padding: 0; list-style: none; margin: 4px 0; }
+    .btn { font: inherit; padding: 10px 16px; border-radius: 8px; border: 0; background: var(--accent);
+           color: var(--accent-text); cursor: pointer; text-decoration: none; display: inline-block; }
+    .messages { list-style: none; padding: 0; }
+    .messages li { background: var(--fotball); padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; }
+    .muted { color: var(--muted); }
+    table.list { width: 100%; border-collapse: collapse; }
+    table.list td, table.list th { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
   </style>
   {% block head %}{% endblock %}
 </head>
@@ -36,15 +57,19 @@
   <header>
     <h1><a href="{% if static_export %}index.html{% else %}/{% endif %}" style="text-decoration:none">Treningstider Blixhalli</a></h1>
     {% if static_export %}
-    {% elif user.is_staff %}
-      <a href="/admin/">Administrer</a>
-      <form method="post" action="/admin/logout/" style="margin:0">{% csrf_token %}
-        <button type="submit" style="background:none;border:0;color:inherit;text-decoration:underline;font:inherit;cursor:pointer;padding:0">Logg ut</button>
+    {% elif user.is_authenticated %}
+      <a href="{% url 'mine' %}">Mine lag</a>
+      {% if user.is_staff %}<a href="{% url 'invite' %}">Inviter</a><a href="/admin/">Administrer</a>{% endif %}
+      <form method="post" action="{% url 'logout' %}" style="margin:0">{% csrf_token %}
+        <button type="submit" class="linklike">Logg ut</button>
       </form>
     {% else %}
-      <a href="/admin/login/?next={{ request.path|urlencode }}">Logg inn</a>
+      <a href="{% url 'login' %}">Logg inn</a>
     {% endif %}
   </header>
-  <main>{% block content %}{% endblock %}</main>
+  <main>
+    {% if messages %}<ul class="messages">{% for m in messages %}<li>{{ m }}</li>{% endfor %}</ul>{% endif %}
+    {% block content %}{% endblock %}
+  </main>
 </body>
 </html>

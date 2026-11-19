@@ -15,6 +15,21 @@ nettlesaren på både PC og mobil.
 Laga med [Django](https://www.djangoproject.com/) (Python). Data blir lagra i
 SQLite, ein database som ligg i éi fil og ikkje treng noko oppsett.
 
+## Brukarar og roller
+
+- **Alle** kan sjå vekeplanen utan å logge inn.
+- **Trenarar/lagleiarar** loggar inn med e-post og passord på `/logg-inn/`, og ser laga og tidene sine under «Mine lag».
+- **Administratorar** (brukarar med «staff»-tilgang) kan endre alt via `/admin/` og invitere brukarar på `/inviter/`.
+
+Nye brukarar kan kome inn på to måtar:
+1. **Administrator inviterer** på `/inviter/`. Brukaren får ein e-post med ei lenkje for å lage passord.
+2. **Brukaren ber sjølv om brukar** på `/be-om-brukar/`. Administratorar får varsel på e-post og godkjenner
+   eller avslår under «Førespurnader om brukar» i admin (vel førespurnaden og handlinga «Godkjenn»).
+
+Lagleiarar for kvar gruppe blir sette under «Grupper» i admin.
+
+E-post blir skriven ut i terminalen så lenge `EMAIL_HOST` ikkje er sett (sjå «Leggje appen ut på nett»).
+
 ## Kom i gang
 
 Du treng Python 3.12 eller nyare.
@@ -72,7 +87,8 @@ For å hente dataa inn i ein tom lokal database: `python manage.py loaddata data
 | `bookings/models.py` | Data: Sesong, Gruppe, Treningstid, og regelen mot kollisjonar |
 | `bookings/views.py` | Lagar vekeplan-sida |
 | `bookings/templates/bookings/` | HTML og CSS for sidene |
-| `bookings/admin.py` | Oppsett av administrasjonssida |
+| `bookings/admin.py` | Oppsett av administrasjonssida, med godkjenning av brukarar |
+| `bookings/accounts.py`, `account_views.py`, `forms.py` | Brukarar: invitasjon, førespurnader, innlogging |
 | `bookings/management/commands/import_timeplan.py` | Excel-importen |
 | `bookings/tests.py` | Automatiske testar |
 | `config/settings.py` | Innstillingar (tidssone, språk, database) |
@@ -98,6 +114,8 @@ Appen les desse miljøvariablane, slik at han kan køyre trygt på ein server:
 | `DJANGO_SECRET_KEY` | ein lang, tilfeldig og hemmeleg tekst |
 | `DJANGO_DEBUG` | `0` |
 | `DJANGO_ALLOWED_HOSTS` | `blixhalli.example.no` |
+| `DJANGO_FROM_EMAIL` | `Treningstider Blixhalli <post@example.no>` |
+| `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` | SMTP-tenaren som sender e-post |
 
 ## Lære meir
 
