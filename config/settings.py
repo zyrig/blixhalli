@@ -102,6 +102,12 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 # Lokalt: SQLite-fil. I drift: set DATABASE_URL, t.d. til Supabase sin «Session pooler»-adresse:
 # postgresql://postgres.<prosjekt>:<passord>@aws-0-eu-central-1.pooler.supabase.com:5432/postgres
+# Supabase-integrasjonen i Vercel legg inn POSTGRES_URL_NON_POOLING / POSTGRES_URL automatisk.
+if not os.environ.get("DATABASE_URL"):
+    for key in ("POSTGRES_URL_NON_POOLING", "POSTGRES_URL"):
+        if os.environ.get(key):
+            os.environ["DATABASE_URL"] = os.environ[key]
+            break
 if HOSTED and not os.environ.get("DATABASE_URL"):
     from django.core.exceptions import ImproperlyConfigured
     raise ImproperlyConfigured("Set miljøvariabelen DATABASE_URL til adressa frå Supabase (Session pooler).")
@@ -112,8 +118,19 @@ DATABASES = {
         conn_health_checks=True,
     )
 }
-if DATABASES["default"]["ENGINE"] == "django.db.backends.postgresql" and "localhost" not in os.environ.get("DATABASE_URL", ""):
-    DATABASES["default"].setdefault("OPTIONS", {})["sslmode"] = "require"
+if DATABASES["default"]["ENGINE"] == "django.db.backends.postgresql":
+    options = DATABASES["default"].setdefault("OPTIONS", {})
+    # Supabase legg somme gonger til eigne parametrar i adressa (t.d. «supa=...») som drivaren ikkje kjenner.
+    for key in list(options):
+        if key not in ("sslmode", "connect_timeout", "options"):
+            options.pop(key)
+    if "localhost" not in os.environ.get("DATABASE_URL", ""):
+        options["sslmode"] = "require"
+    # «Transaction pooler» (port 6543) støttar ikkje førebudde spørjingar eller cursorar på tenaren.
+    if str(DATABASES["default"].get("PORT")) == "6543":
+        options["prepare_threshold"] = None
+        DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
+        DATABASES["default"]["CONN_MAX_AGE"] = 0
 
 
 # Password validation
