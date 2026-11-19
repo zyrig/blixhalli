@@ -1,0 +1,4 @@
+{% extends "bookings/base.html" %}
+{% block content %}
+<p>Ingen anlegg er lagt inn enno.{% if user.is_staff %} <a href="/admin/bookings/facility/add/">Legg til eit anlegg</a>.{% endif %}</p>
+{% endblock %}

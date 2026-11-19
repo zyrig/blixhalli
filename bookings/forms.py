@@ -99,8 +99,14 @@ class BookingForm(forms.ModelForm):
         widgets = {"date": DATE_INPUT, "start_time": TIME_INPUT, "end_time": TIME_INPUT}
         labels = {"group": "Lag"}
 
-    def __init__(self, *args, user, **kwargs):
+    def __init__(self, *args, user, facility, **kwargs):
         super().__init__(*args, **kwargs)
+        self.instance.facility = facility
+        # Delane av anlegget, t.d. 1/3, 2/3, 3/3 eller A, B
+        choices = [(n, label) for n, label in facility.sections]
+        self.fields["first_section"] = forms.TypedChoiceField(label="Frå del", choices=choices, coerce=int, initial=1)
+        self.fields["last_section"] = forms.TypedChoiceField(label="Til del", choices=choices, coerce=int,
+                                                             initial=facility.section_count)
         # Lagleiarar kan berre booke for sine eigne lag.
         self.fields["group"].queryset = managed_groups(user)
         if self.fields["group"].queryset.count() == 1:

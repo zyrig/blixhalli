@@ -14,7 +14,7 @@ import openpyxl
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from bookings.models import Group, Season, TrainingSlot
+from bookings.models import Facility, Group, Season, TrainingSlot, default_facility
 
 TIME_RE = re.compile(r"^\s*(\d{1,2})(?:[.:](\d{2}))?\s*-\s*(\d{1,2})(?:[.:](\d{2}))?\s*$")
 FIRST_DAY_COL = 2  # kolonne B
@@ -42,9 +42,17 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("path")
         parser.add_argument("--replace", action="store_true", help="Slett eksisterande tider i sesongane først.")
+        parser.add_argument("--anlegg", help="Adressa (slug) til anlegget, t.d. blixhalli. Standard: første anlegg.")
 
     @transaction.atomic
-    def handle(self, path, replace, **options):
+    def handle(self, path, replace, anlegg=None, **options):
+        if anlegg:
+            try:
+                self.facility = Facility.objects.get(slug=anlegg)
+            except Facility.DoesNotExist:
+                raise CommandError(f"Fann ikkje anlegget «{anlegg}».")
+        else:
+            self.facility = Facility.objects.get(pk=default_facility())
         try:
             wb = openpyxl.load_workbook(path)
         except Exception as e:  # noqa: BLE001
@@ -74,7 +82,8 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING(f"Fana «{ws.title}»: fann ingen klokkeslett, hoppar over."))
             return
 
-        season, created = Season.objects.get_or_create(name=season_name, defaults={"published": not draft})
+        season, created = Season.objects.get_or_create(facility=self.facility, name=season_name,
+                                                       defaults={"published": not draft})
         if notes and not season.notes:
             season.notes = "\n".join(notes)
             season.save()
@@ -110,4 +119,5 @@ class Command(BaseCommand):
                 slot.save()
                 count += 1
         status = "utkast" if not season.published else "publisert"
-        self.stdout.write(self.style.SUCCESS(f"Sesong {season.name} ({status}): {count} treningstider importert."))
+        self.stdout.write(self.style.SUCCESS(
+            f"{self.facility}, sesong {season.name} ({status}): {count} treningstider importert."))

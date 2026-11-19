@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .forms import BookingForm, CancellationForm
-from .models import Booking, Cancellation, TrainingSlot
+from .models import Booking, Cancellation, Facility, TrainingSlot
 from .permissions import can_manage
 
 
@@ -22,7 +22,7 @@ def _require_manage(user, group):
 
 @login_required
 def cancel_slot(request, slot_id):
-    slot = get_object_or_404(TrainingSlot.objects.select_related("group", "season"), pk=slot_id)
+    slot = get_object_or_404(TrainingSlot.objects.select_related("group", "season__facility"), pk=slot_id)
     _require_manage(request.user, slot.group)
     form = CancellationForm(request.POST or None, slot=slot, initial={"date": request.GET.get("dato")})
     if request.method == "POST" and form.is_valid():
@@ -30,7 +30,7 @@ def cancel_slot(request, slot_id):
         cancellation.created_by = request.user
         cancellation.save()
         messages.success(request, f"{slot.group} er avlyst {cancellation.date:%d.%m.%Y}. Plassen er no ledig for andre.")
-        return redirect("week", cancellation.date.isoformat())
+        return redirect("week", slot.facility.slug, cancellation.date.isoformat())
     return render(request, "bookings/cancel.html", {"slot": slot, "form": form})
 
 
@@ -49,8 +49,9 @@ def undo_cancellation(request, pk):
 
 
 @login_required
-def new_booking(request):
-    form = BookingForm(request.POST or None, user=request.user,
+def new_booking(request, facility):
+    facility = get_object_or_404(Facility, slug=facility)
+    form = BookingForm(request.POST or None, user=request.user, facility=facility,
                        initial={k: v for k, v in request.GET.items() if k in ("date", "start_time", "end_time")})
     if not form.fields["group"].queryset.exists():
         messages.error(request, "Du er ikkje lagleiar for noko lag enno.")
@@ -58,18 +59,19 @@ def new_booking(request):
     if request.method == "POST" and form.is_valid():
         booking = form.save(commit=False)
         _require_manage(request.user, booking.group)  # ekstra sikring
+        booking.facility = facility
         booking.created_by = request.user
         booking.status = Booking.APPROVED  # enkelttider på ledig plass blir godkjende automatisk
         booking.save()
         messages.success(request, f"Booka: {booking}.")
-        return redirect("week", booking.date.isoformat())
-    return render(request, "bookings/booking_form.html", {"form": form})
+        return redirect("week", facility.slug, booking.date.isoformat())
+    return render(request, "bookings/booking_form.html", {"form": form, "facility": facility})
 
 
 @login_required
 @require_POST
 def delete_booking(request, pk):
-    booking = get_object_or_404(Booking.objects.select_related("group"), pk=pk)
+    booking = get_object_or_404(Booking.objects.select_related("group", "facility"), pk=pk)
     _require_manage(request.user, booking.group)
     booking.delete()
     messages.success(request, f"Enkelttida er sletta: {booking}.")
@@ -79,6 +81,8 @@ def delete_booking(request, pk):
 def upcoming_for(groups):
     today = timezone.localdate()
     return {
-        "cancellations": Cancellation.objects.filter(slot__group__in=groups, date__gte=today).select_related("slot__group"),
-        "bookings": Booking.objects.filter(group__in=groups, date__gte=today).select_related("group"),
+        "cancellations": Cancellation.objects.filter(slot__group__in=groups, date__gte=today)
+                         .select_related("slot__group", "slot__season__facility"),
+        "bookings": Booking.objects.filter(group__in=groups, date__gte=today).select_related("group", "facility"),
+        "facilities": Facility.objects.all(),
     }

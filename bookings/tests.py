@@ -108,21 +108,21 @@ class PageTests(TestCase):
                                     start_time=t(17, 30), end_time=t(18, 30))
 
     def test_schedule_shows_published_season(self):
-        r = self.client.get("/sesong/")
+        r = self.client.get("/blixhalli/sesong/")
         self.assertContains(r, "Fotball J12")
         self.assertContains(r, "grid-row: 19 / 21")  # 17:30 er rad 19 når rutenettet startar 09:00
 
     def test_draft_hidden_from_public(self):
-        self.assertEqual(self.client.get(f"/sesong/{self.draft.pk}/").status_code, 404)
+        self.assertEqual(self.client.get(f"/blixhalli/sesong/{self.draft.pk}/").status_code, 404)
 
     def test_draft_visible_to_staff(self):
         User.objects.create_user("admin", password="x", is_staff=True)
         self.client.login(username="admin", password="x")
-        self.assertContains(self.client.get(f"/sesong/{self.draft.pk}/"), "Utkast")
+        self.assertContains(self.client.get(f"/blixhalli/sesong/{self.draft.pk}/"), "Utkast")
 
     def test_empty_site(self):
         Season.objects.all().delete()
-        self.assertContains(self.client.get("/sesong/"), "Ingen sesongar")
+        self.assertContains(self.client.get("/blixhalli/sesong/"), "Ingen sesongar")
 
 
 class StaticExportTests(TestCase):
@@ -132,7 +132,8 @@ class StaticExportTests(TestCase):
         with tempfile.TemporaryDirectory() as out:
             call_command("export_static", "--out", out, stdout=open("/dev/null", "w"))
             import os
-            self.assertEqual(sorted(os.listdir(out)), [".nojekyll", "index.html", "sesong-2025-2026.html"])
+            self.assertEqual(sorted(os.listdir(out)),
+                             [".nojekyll", "blixhalli-sesong-2025-2026.html", "blixhalli.html", "index.html"])
             html = open(os.path.join(out, "index.html"), encoding="utf-8").read()
             self.assertNotIn('href="/', html)   # GitHub Pages ligg under /blixhalli/
             self.assertNotIn("Logg inn", html)
@@ -244,13 +245,13 @@ class LeaderPermissionAndWeekTests(TestCase):
         self.client.force_login(self.kari)
 
     def book(self, group, start=17, end=18, date=None):
-        return self.client.post("/enkelttid/ny/", {
+        return self.client.post("/blixhalli/enkelttid/ny/", {
             "group": group.pk, "date": (date or self.monday).isoformat(), "start_time": f"{start:02d}:00",
             "end_time": f"{end:02d}:00", "first_section": 1, "last_section": 3, "note": "Ekstratrening"})
 
     def test_everyone_sees_who_has_which_time(self):
         self.client.logout()
-        r = self.client.get(f"/veke/{self.monday.isoformat()}/")
+        r = self.client.get(f"/blixhalli/veke/{self.monday.isoformat()}/")
         self.assertContains(r, "Handball J12")
         self.assertContains(r, "Fotball G8")
         self.assertNotContains(r, "/avlys/")  # men ingen lenkjer for å endre
@@ -260,10 +261,10 @@ class LeaderPermissionAndWeekTests(TestCase):
         r = self.client.post(f"/avlys/{self.g8_slot.pk}/", {"date": self.monday.isoformat()})
         self.assertEqual(r.status_code, 403)
         r = self.client.post(f"/avlys/{self.j12_slot.pk}/", {"date": self.monday.isoformat(), "reason": "Cup"})
-        self.assertRedirects(r, f"/veke/{self.monday.isoformat()}/")
-        page = self.client.get(f"/veke/{self.monday.isoformat()}/")
+        self.assertRedirects(r, f"/blixhalli/veke/{self.monday.isoformat()}/")
+        page = self.client.get(f"/blixhalli/veke/{self.monday.isoformat()}/")
         self.assertContains(page, "Avlyst: Cup")
-        next_week = self.client.get(f"/veke/{(self.monday + datetime.timedelta(days=7)).isoformat()}/")
+        next_week = self.client.get(f"/blixhalli/veke/{(self.monday + datetime.timedelta(days=7)).isoformat()}/")
         self.assertContains(next_week, f"/avlys/{self.j12_slot.pk}/")      # eigen tid: lenkje
         self.assertNotContains(next_week, f"/avlys/{self.g8_slot.pk}/")    # andre sine: inga lenkje
 
@@ -287,9 +288,9 @@ class LeaderPermissionAndWeekTests(TestCase):
         from .models import Cancellation
         Cancellation.objects.create(slot=self.g8_slot, date=self.monday)
         r = self.book(self.j12, 18, 19)
-        self.assertRedirects(r, f"/veke/{self.monday.isoformat()}/")
+        self.assertRedirects(r, f"/blixhalli/veke/{self.monday.isoformat()}/")
         self.assertEqual(Booking.objects.get().status, "approved")
-        self.assertContains(self.client.get(f"/veke/{self.monday.isoformat()}/"), "enkelttid")
+        self.assertContains(self.client.get(f"/blixhalli/veke/{self.monday.isoformat()}/"), "enkelttid")
 
     def test_double_booking_is_rejected(self):
         self.assertEqual(self.book(self.j12, 20, 21).status_code, 302)
@@ -348,3 +349,74 @@ class DeploySetupTests(TestCase):
             call_command("ensure_admin", stdout=open("/dev/null", "w"))
         admin.refresh_from_db()
         self.assertTrue(admin.check_password("nytt-passord"))
+
+
+
+class FacilityTests(TestCase):
+    """Fleire anlegg: hallen og fotballbanar ute, kvar med si eiga inndeling."""
+
+    def setUp(self):
+        from .models import Facility
+        self.hall = Facility.objects.create(name="Blixhalli", slug="blixhalli", section_labels="1/3,2/3,3/3")
+        self.pitch = Facility.objects.create(name="Kunstgraset", slug="kunstgras", kind=Facility.PITCH,
+                                             section_labels="A,B", order=1)
+        wide = dict(start_date=datetime.date(2000, 1, 1), end_date=datetime.date(2100, 1, 1), published=True)
+        self.hall_season = Season.objects.create(facility=self.hall, name="2026/2027", **wide)
+        self.pitch_season = Season.objects.create(facility=self.pitch, name="2026/2027", **wide)
+        self.group = Group.objects.create(name="Fotball G12", category="fotball")
+        from django.utils import timezone
+        today = timezone.localdate()
+        self.monday = today + datetime.timedelta(days=7 - today.weekday())
+
+    def test_same_season_name_allowed_per_facility_and_sections_follow_facility(self):
+        slot = TrainingSlot.objects.create(season=self.pitch_season, group=self.group, weekday=0,
+                                           start_time=t(17), end_time=t(18), first_section=1, last_section=2)
+        self.assertEqual(slot.sections_label, "Heile bana")
+        slot.last_section = 1
+        self.assertEqual(slot.sections_label, "A")
+
+    def test_too_many_sections_rejected(self):
+        with self.assertRaises(ValidationError):
+            TrainingSlot(season=self.pitch_season, group=self.group, weekday=0, start_time=t(17), end_time=t(18),
+                         first_section=1, last_section=3).full_clean()
+
+    def test_clashes_are_per_facility(self):
+        from .models import Booking
+        TrainingSlot.objects.create(season=self.hall_season, group=self.group, weekday=0,
+                                    start_time=t(17), end_time=t(18), first_section=1, last_section=3)
+        # Same tid på bana er heilt greitt
+        Booking(facility=self.pitch, group=self.group, date=self.monday, start_time=t(17), end_time=t(18),
+                first_section=1, last_section=2).full_clean()
+        with self.assertRaises(ValidationError):
+            Booking(facility=self.hall, group=self.group, date=self.monday, start_time=t(17), end_time=t(18),
+                    first_section=1, last_section=1).full_clean()
+
+    def test_pages_per_facility_with_tabs(self):
+        TrainingSlot.objects.create(season=self.pitch_season, group=self.group, weekday=0,
+                                    start_time=t(17), end_time=t(18), first_section=2, last_section=2)
+        self.assertRedirects(self.client.get("/"), "/blixhalli/")
+        r = self.client.get(f"/kunstgras/veke/{self.monday.isoformat()}/")
+        self.assertContains(r, "Fotball G12")
+        self.assertContains(r, 'href="/blixhalli/"')          # fane til det andre anlegget
+        self.assertContains(r, "--n: 2")                       # to kolonnar per dag
+        hall = self.client.get(f"/blixhalli/veke/{self.monday.isoformat()}/")
+        self.assertNotContains(hall, "Fotball G12")
+        self.assertEqual(self.client.get("/finst-ikkje/").status_code, 404)
+
+    def test_booking_form_offers_facility_sections(self):
+        user = User.objects.create_user("l@example.com", "l@example.com", "pw")
+        self.group.leaders.add(user)
+        self.client.force_login(user)
+        r = self.client.get("/kunstgras/enkelttid/ny/")
+        self.assertContains(r, ">A</option>")
+        self.assertNotContains(r, ">1/3</option>")
+        r = self.client.post("/kunstgras/enkelttid/ny/", {
+            "group": self.group.pk, "date": self.monday.isoformat(), "start_time": "17:00", "end_time": "18:00",
+            "first_section": 2, "last_section": 2})
+        from .models import Booking
+        self.assertEqual(Booking.objects.get().facility, self.pitch)
+
+    def test_reserved_slug_rejected(self):
+        from .models import Facility
+        with self.assertRaises(ValidationError):
+            Facility(name="Mine", slug="mine").full_clean()

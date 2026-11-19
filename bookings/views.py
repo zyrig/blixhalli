@@ -2,11 +2,11 @@
 import datetime
 
 from django.http import Http404
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import SECTIONS, WEEKDAYS, Booking, Cancellation, Season, TrainingSlot
+from .models import WEEKDAYS, Booking, Cancellation, Facility, Season, TrainingSlot
 from .permissions import can_manage
 
 SLOT_MINUTES = 30
@@ -17,8 +17,16 @@ def _minutes(t):
     return t.hour * 60 + t.minute
 
 
-def visible_seasons(user):
-    seasons = Season.objects.all()
+def home(request):
+    """Framsida: gå rett til vekevisinga for det første anlegget."""
+    facility = Facility.objects.first()
+    if facility is None:
+        return render(request, "bookings/no_facility.html")
+    return redirect("week_current", facility.slug)
+
+
+def visible_seasons(user, facility):
+    seasons = facility.seasons.select_related("facility")
     if not (user and user.is_staff):
         seasons = seasons.filter(published=True)
     return seasons
@@ -58,7 +66,7 @@ def _validity(slot):
     return [" ".join(parts)] if parts else []
 
 
-def build_grid(days):
+def build_grid(days, facility):
     """Rekn ut rader og kolonnar i CSS-rutenettet for alle entries."""
     entries = [e for d in days for e in d["entries"]]
     # Rutenettet går frå første til siste heile time som er i bruk (minst 09–22).
@@ -74,22 +82,24 @@ def build_grid(days):
         e["row_end"] = -(-(_minutes(e["end"]) - first) // SLOT_MINUTES) + 2
         e["col_start"] = e["first"] + 1
         e["col_end"] = e["last"] + 2
-    return {"days": days, "times": times, "sections": SECTIONS}
+    return {"days": days, "times": times, "sections": facility.sections}
 
 
 # ---------------------------------------------------------------------------
 # Sesongplanen: den faste vekeplanen for ein sesong.
 # ---------------------------------------------------------------------------
 
-def season_view(request, season_id=None):
-    seasons = visible_seasons(request.user)
+def season_view(request, facility, season_id=None):
+    facility = get_object_or_404(Facility, slug=facility)
+    seasons = visible_seasons(request.user, facility)
     season = get_object_or_404(seasons, pk=season_id) if season_id else default_season(seasons)
-    return render(request, "bookings/schedule.html", schedule_context(season, seasons, user=request.user))
+    return render(request, "bookings/schedule.html", schedule_context(facility, season, seasons, user=request.user))
 
 
-def schedule_context(season, seasons, static_export=False, user=None):
+def schedule_context(facility, season, seasons, static_export=False, user=None):
     """Alt malen treng for å teikne sesongplanen. Blir òg brukt av export_static."""
-    context = {"mode": "season", "season": season, "seasons": seasons, "static_export": static_export}
+    context = {"mode": "season", "facility": facility, "facilities": Facility.objects.all(),
+               "season": season, "seasons": seasons, "static_export": static_export}
     if season is None:
         return context
     show_admin_links = user is not None and user.is_staff and not static_export
@@ -98,10 +108,10 @@ def schedule_context(season, seasons, static_export=False, user=None):
         entries = [
             _entry(s, "fast", _validity(s),
                    reverse("admin:bookings_trainingslot_change", args=[s.pk]) if show_admin_links else None)
-            for s in season.slots.select_related("group") if s.weekday == number
+            for s in season.slots.select_related("group", "season__facility") if s.weekday == number
         ]
         days.append({"number": number, "name": name, "entries": entries})
-    context.update(build_grid(days))
+    context.update(build_grid(days, facility))
     return context
 
 
@@ -109,7 +119,8 @@ def schedule_context(season, seasons, static_export=False, user=None):
 # Vekevisinga: kva som faktisk skjer ei bestemt veke.
 # ---------------------------------------------------------------------------
 
-def week_view(request, day=None):
+def week_view(request, facility, day=None):
+    facility = get_object_or_404(Facility, slug=facility)
     if day:
         try:
             date = datetime.date.fromisoformat(day)
@@ -122,10 +133,12 @@ def week_view(request, day=None):
     sunday = dates[-1]
     user = request.user
 
-    seasons = [s for s in visible_seasons(user) if s.covers(monday) or s.covers(sunday)]
-    slots = list(TrainingSlot.objects.filter(season__in=seasons).select_related("group", "season"))
-    cancellations = {(c.slot_id, c.date): c for c in Cancellation.objects.filter(date__range=(monday, sunday))}
-    bookings = list(Booking.objects.filter(date__range=(monday, sunday), status=Booking.APPROVED).select_related("group"))
+    seasons = [s for s in visible_seasons(user, facility) if s.covers(monday) or s.covers(sunday)]
+    slots = list(TrainingSlot.objects.filter(season__in=seasons).select_related("group", "season__facility"))
+    cancellations = {(c.slot_id, c.date): c for c in
+                     Cancellation.objects.filter(slot__season__facility=facility, date__range=(monday, sunday))}
+    bookings = list(Booking.objects.filter(facility=facility, date__range=(monday, sunday), status=Booking.APPROVED)
+                    .select_related("group", "facility"))
 
     days = []
     for d in dates:
@@ -157,12 +170,13 @@ def week_view(request, day=None):
     else:
         span = f"{monday.day}. {MONTHS[monday.month - 1]} – {sunday.day}. {MONTHS[sunday.month - 1]} {sunday.year}"
     context = {
-        "mode": "week", "week_title": f"Veke {iso_week}", "week_span": span,
+        "mode": "week", "facility": facility, "facilities": Facility.objects.all(),
+        "week_title": f"Veke {iso_week}", "week_span": span,
         "prev_week": (monday - datetime.timedelta(days=7)).isoformat(),
         "next_week": (monday + datetime.timedelta(days=7)).isoformat(),
         "is_current_week": monday <= timezone.localdate() <= sunday,
         "drafts": [s for s in seasons if not s.published],
         "no_season": not seasons,
     }
-    context.update(build_grid(days))
+    context.update(build_grid(days, facility))
     return render(request, "bookings/schedule.html", context)

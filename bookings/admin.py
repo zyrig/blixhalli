@@ -2,16 +2,26 @@
 from django.contrib import admin, messages
 
 from . import accounts
-from .models import AccountRequest, Booking, Cancellation, Group, Season, TrainingSlot
+from .models import AccountRequest, Booking, Cancellation, Facility, Group, Season, TrainingSlot
 
 admin.site.site_header = "Blixhalli – administrasjon"
 admin.site.site_title = "Blixhalli"
 admin.site.site_url = "/"
 
 
+@admin.register(Facility)
+class FacilityAdmin(admin.ModelAdmin):
+    list_display = ["name", "kind", "section_labels", "slug", "order"]
+    prepopulated_fields = {"slug": ["name"]}
+
+
 @admin.register(Season)
 class SeasonAdmin(admin.ModelAdmin):
-    list_display = ["name", "published", "start_date", "end_date"]
+    list_display = ["name", "facility", "published", "start_date", "end_date"]
+    list_filter = ["facility", "published"]
+
+    def get_changeform_initial_data(self, request):
+        return dict(request.GET.items())
 
 
 @admin.register(Group)
@@ -29,7 +39,8 @@ class GroupAdmin(admin.ModelAdmin):
 @admin.register(TrainingSlot)
 class TrainingSlotAdmin(admin.ModelAdmin):
     list_display = ["group", "weekday", "start_time", "end_time", "sections_label", "tentative", "season"]
-    list_filter = ["season", "weekday", "tentative", "group__category"]
+    list_filter = ["season__facility", "season", "weekday", "tentative", "group__category"]
+    list_select_related = ["group", "season__facility"]
     search_fields = ["group__name", "note"]
     autocomplete_fields = ["group"]
 
@@ -82,7 +93,7 @@ class CancellationAdmin(admin.ModelAdmin):
 
 @admin.register(Booking)
 class BookingAdmin(admin.ModelAdmin):
-    list_display = ["group", "date", "start_time", "end_time", "sections_label", "status", "note", "created_by"]
-    list_filter = ["status", "group__category"]
+    list_display = ["group", "facility", "date", "start_time", "end_time", "sections_label", "status", "note", "created_by"]
+    list_filter = ["facility", "status", "group__category"]
     date_hierarchy = "date"
     autocomplete_fields = ["group"]

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#1f4e79">
-  <title>{% block title %}Treningstider Blixhalli{% endblock %}</title>
+  <title>{% block title %}Treningstider{% endblock %}</title>
   <style>
     :root {
       --bg: #f6f7f9; --surface: #ffffff; --text: #1b1f24; --muted: #5d6673; --line: #d9dde3;
@@ -29,6 +29,9 @@
     header a { color: inherit; }
     main { padding: 16px; max-width: 1400px; margin: 0 auto; }
     a { color: var(--accent); }
+    .facilities { display: flex; gap: 4px; padding: 8px 16px 0; overflow-x: auto; background: var(--accent); }
+    .facilities a { color: var(--accent-text); text-decoration: none; padding: 8px 14px; border-radius: 8px 8px 0 0; white-space: nowrap; opacity: .85; }
+    .facilities a[aria-current] { background: var(--bg); color: var(--text); opacity: 1; font-weight: 600; }
     .linklike { background: none; border: 0; color: inherit; text-decoration: underline; font: inherit; cursor: pointer; padding: 0; }
     .narrow { max-width: 520px; margin: 0 auto; }
     .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
@@ -55,7 +58,7 @@
 </head>
 <body>
   <header>
-    <h1><a href="{% if static_export %}index.html{% else %}/{% endif %}" style="text-decoration:none">Treningstider Blixhalli</a></h1>
+    <h1><a href="{% if static_export %}index.html{% else %}/{% endif %}" style="text-decoration:none">Treningstider{% if facility and facilities|length < 2 %} {{ facility.name }}{% endif %}</a></h1>
     {% if static_export %}
     {% elif user.is_authenticated %}
       <a href="{% url 'mine' %}">Mine lag</a>
@@ -67,6 +70,13 @@
       <a href="{% url 'login' %}">Logg inn</a>
     {% endif %}
   </header>
+  {% if facilities|length > 1 %}
+  <nav class="facilities" aria-label="Anlegg">
+    {% for f in facilities %}
+      <a href="{% if static_export %}{{ f.slug }}.html{% else %}{% url 'week_current' f.slug %}{% endif %}"{% if f == facility %} aria-current="page"{% endif %}>{{ f.name }}</a>
+    {% endfor %}
+  </nav>
+  {% endif %}
   <main>
     {% if messages %}<ul class="messages">{% for m in messages %}<li>{{ m }}</li>{% endfor %}</ul>{% endif %}
     {% block content %}{% endblock %}

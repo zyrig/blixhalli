@@ -1,8 +1,20 @@
 [
 {
+  "model": "bookings.facility",
+  "pk": 1,
+  "fields": {
+    "name": "Blixhalli",
+    "slug": "blixhalli",
+    "kind": "hall",
+    "section_labels": "1/3,2/3,3/3",
+    "order": 0
+  }
+},
+{
   "model": "bookings.season",
   "pk": 1,
   "fields": {
+    "facility": 1,
     "name": "2026/2027",
     "start_date": null,
     "end_date": null,
@@ -14,6 +26,7 @@
   "model": "bookings.season",
   "pk": 2,
   "fields": {
+    "facility": 1,
     "name": "2025/2026",
     "start_date": null,
     "end_date": null,
@@ -27,7 +40,8 @@
   "fields": {
     "name": "\"Tassatrim\"",
     "category": "trim",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -36,7 +50,8 @@
   "fields": {
     "name": "Fotball -damelag",
     "category": "fotball",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -45,7 +60,8 @@
   "fields": {
     "name": "Friidrett bootcamp",
     "category": "friidrett",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -54,7 +70,8 @@
   "fields": {
     "name": "Fotball G 2019",
     "category": "fotball",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -63,7 +80,8 @@
   "fields": {
     "name": "Fotball -herrelag",
     "category": "fotball",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -72,7 +90,8 @@
   "fields": {
     "name": "Vik fengsel",
     "category": "anna",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -81,7 +100,8 @@
   "fields": {
     "name": "Handball J11",
     "category": "handball",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -90,7 +110,8 @@
   "fields": {
     "name": "Friidrett - turn 2 grupper (1/2 og 3/4 klasse) Fotball (G8-9) etter nyttår",
     "category": "friidrett",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -99,7 +120,8 @@
   "fields": {
     "name": "Handball J11 og J13",
     "category": "handball",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -108,7 +130,8 @@
   "fields": {
     "name": "Handball 1. og 2.klasse",
     "category": "handball",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -117,7 +140,8 @@
   "fields": {
     "name": "Handball 2. og 3. klasse",
     "category": "handball",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -126,7 +150,8 @@
   "fields": {
     "name": "Badminton",
     "category": "badminton",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -135,7 +160,8 @@
   "fields": {
     "name": "Handball J13",
     "category": "handball",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -144,7 +170,8 @@
   "fields": {
     "name": "Handball J13 og Senior",
     "category": "handball",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -153,7 +180,8 @@
   "fields": {
     "name": "Fotball J (2014/2015)",
     "category": "fotball",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -162,7 +190,8 @@
   "fields": {
     "name": "Fotball J (2009-2013)",
     "category": "fotball",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -171,7 +200,8 @@
   "fields": {
     "name": "Fotball G (2014-2016)",
     "category": "fotball",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -180,7 +210,8 @@
   "fields": {
     "name": "Trim Zumba",
     "category": "trim",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -189,7 +220,8 @@
   "fields": {
     "name": "Volleyball",
     "category": "volleyball",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -198,7 +230,8 @@
   "fields": {
     "name": "Fotball G (2011-2013)",
     "category": "fotball",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -207,7 +240,8 @@
   "fields": {
     "name": "Trim, \"mandagstrening\"",
     "category": "trim",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -216,7 +250,8 @@
   "fields": {
     "name": "Friidrett/sirkel",
     "category": "friidrett",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -225,7 +260,8 @@
   "fields": {
     "name": "Vik Ørsta saman med Sognekraft",
     "category": "anna",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -234,7 +270,8 @@
   "fields": {
     "name": "Fotball damer",
     "category": "fotball",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -243,7 +280,8 @@
   "fields": {
     "name": "Fotball G8",
     "category": "fotball",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -252,7 +290,8 @@
   "fields": {
     "name": "Fotball G/J 2016",
     "category": "fotball",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -261,7 +300,8 @@
   "fields": {
     "name": "Fotball G10-11",
     "category": "fotball",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -270,7 +310,8 @@
   "fields": {
     "name": "Trim, Zumba",
     "category": "trim",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -279,7 +320,8 @@
   "fields": {
     "name": "Vik Fengsel",
     "category": "anna",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -288,7 +330,8 @@
   "fields": {
     "name": "Fotball A-lag, Vik2/ungdomslaga",
     "category": "fotball",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -297,7 +340,8 @@
   "fields": {
     "name": "Handball 1. klasse",
     "category": "handball",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -306,7 +350,8 @@
   "fields": {
     "name": "Handball J10",
     "category": "handball",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -315,7 +360,8 @@
   "fields": {
     "name": "Fotball G12",
     "category": "fotball",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -324,7 +370,8 @@
   "fields": {
     "name": "Fotball J12",
     "category": "fotball",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -333,7 +380,8 @@
   "fields": {
     "name": "Handball J12",
     "category": "handball",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -342,7 +390,8 @@
   "fields": {
     "name": "Friidrett - turn (oktober-november), Fotball J13-14 frå desember",
     "category": "friidrett",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -351,7 +400,8 @@
   "fields": {
     "name": "Handball J12 og Senior",
     "category": "handball",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -360,7 +410,8 @@
   "fields": {
     "name": "Fotball J13-14",
     "category": "fotball",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -369,7 +420,8 @@
   "fields": {
     "name": "Fotball J10-11",
     "category": "fotball",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -378,7 +430,8 @@
   "fields": {
     "name": "Vik Ørsta",
     "category": "anna",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -387,7 +440,8 @@
   "fields": {
     "name": "Trim, \"dametrim\"",
     "category": "trim",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -396,7 +450,8 @@
   "fields": {
     "name": "Fotball Old Boys",
     "category": "fotball",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {
@@ -405,7 +460,8 @@
   "fields": {
     "name": "Sognekraft -bandy",
     "category": "anna",
-    "contact": ""
+    "contact": "",
+    "leaders": []
   }
 },
 {

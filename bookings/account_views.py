@@ -7,7 +7,6 @@ from django.shortcuts import redirect, render
 from . import accounts
 from .forms import AccountRequestForm, InviteForm
 from .models import AccountRequest, TrainingSlot
-from .views import visible_seasons
 
 
 def request_account(request):
@@ -24,11 +23,11 @@ def request_account(request):
 @login_required
 def mine(request):
     groups = request.user.led_groups.all()
-    slots = (
-        TrainingSlot.objects.filter(group__in=groups, season__in=visible_seasons(request.user))
-        .select_related("group", "season")
-        .order_by("-season__name", "weekday", "start_time")
-    )
+    slots = TrainingSlot.objects.filter(group__in=groups)
+    if not request.user.is_staff:
+        slots = slots.filter(season__published=True)  # utkast er berre synlege for administratorar
+    slots = slots.select_related("group", "season__facility").order_by(
+        "season__facility", "-season__name", "weekday", "start_time")
     from .leader_views import upcoming_for
     context = {"groups": groups, "slots": slots, **upcoming_for(groups)}
     if request.user.is_staff:

@@ -1,13 +1,16 @@
-# Treningstider Blixhalli
+# Treningstider
 
-Ein nettapp for å setje opp og vise treningstidene i Blixhalli. Han fungerer i
-nettlesaren på både PC og mobil.
+Ein nettapp for å setje opp og vise treningstidene i Blixhalli, og seinare på fotballbanane ute.
+Han fungerer i nettlesaren på både PC og mobil.
+
+- **Fleire anlegg:** kvart anlegg (hall eller bane ute) har eiga inndeling, t.d. «1/3, 2/3, 3/3» eller
+  «A, B», sine eigne sesongar og si eiga adresse (`/blixhalli/`, `/kunstgras/`). Laga og lagleiarane er felles.
 
 - **Vekevising** (framsida) for ei bestemt veke: faste tider, avlysingar og enkelttider.
 - **Avlysingar:** ei fast tid kan avlysast ein dato, og plassen blir ledig for andre.
 - **Enkelttider** (ekstratrening, kamp) blir godkjende automatisk når plassen er ledig.
 - **Sesongplan** (`/sesong/`) (t.d. 2026/2027), lagt opp som rutenett slik som i reknearket.
-- **Salen er delt i tre** (1/3, 2/3, 3/3). Ei treningstid brukar éin, to eller alle tre delane.
+- **Delar:** Blixhalli er delt i tre (1/3, 2/3, 3/3). Ei treningstid brukar éin eller fleire delar ved sida av kvarandre.
 - **Kollisjonskontroll:** appen stoppar to grupper frå å få same del av salen samstundes.
 - **Utkast:** ein sesong kan vere eit utkast som berre dei som er logga inn ser.
 - **Tider som ikkje er avklarte** (forslag, "?") blir viste med stipla kant.
@@ -17,6 +20,12 @@ nettlesaren på både PC og mobil.
 
 Laga med [Django](https://www.djangoproject.com/) (Python). Data blir lagra i
 SQLite, ein database som ligg i éi fil og ikkje treng noko oppsett.
+
+## Leggje til eit nytt anlegg
+
+I admin: **Anlegg → Legg til**. Vel namn, type (hall eller bane ute) og delane, skilde med komma,
+frå venstre mot høgre, t.d. `A,B` for ei bane delt i to eller `1,2,3,4` for fire 5er-banar.
+Legg så til ein sesong for anlegget (t.d. april–oktober for ei bane ute), og treningstidene.
 
 ## Brukarar og roller
 
@@ -48,7 +57,7 @@ python manage.py runserver       # start appen
 ```
 
 Opne så:
-- http://127.0.0.1:8000/ for å sjå vekeplanen
+- http://127.0.0.1:8000/ for å sjå vekeplanen (du blir sendt vidare til det første anlegget)
 - http://127.0.0.1:8000/admin/ for å leggje inn og endre sesongar, grupper og treningstider
 
 For å teste på mobilen på same nettverk: `python manage.py runserver 0.0.0.0:8000`,
@@ -57,7 +66,7 @@ set `DJANGO_ALLOWED_HOSTS` til IP-adressa til PC-en din, og opne `http://<ip-adr
 ## Importere frå Excel
 
 ```bash
-python manage.py import_timeplan Treningstider_26-27.xlsx
+python manage.py import_timeplan Treningstider_26-27.xlsx --anlegg blixhalli
 ```
 
 Kvar fane blir ein sesong. Ei fane med «utkast» i namnet blir eit utkast.

@@ -1,5 +1,5 @@
 {% extends "bookings/base.html" %}
-{% block title %}{% if mode == "week" %}{{ week_title }} – {% elif season %}Sesongplan {{ season.name }} – {% endif %}Treningstider Blixhalli{% endblock %}
+{% block title %}{{ facility.name }}: {% if mode == "week" %}{{ week_title }}{% elif season %}sesongplan {{ season.name }}{% endif %} – Treningstider{% endblock %}
 {% block head %}
 <style>
   .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
@@ -15,14 +15,16 @@
   .day-picker button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
 
   .week { display: block; }
-  .day { display: grid; grid-template-columns: 3.2rem repeat(3, 1fr);
-         grid-template-rows: 2.6rem repeat({{ times|length }}, var(--row, 2.4rem));
+  .day { display: grid; grid-template-columns: 3.2rem repeat(var(--n), 1fr);
+         grid-template-rows: 3.6rem repeat({{ times|length }}, var(--row, 2.4rem));
          background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
          margin-bottom: 16px; position: relative; }
   .js .day:not(.active) { display: none; }
   .day-name { grid-column: 1 / -1; grid-row: 1; font-weight: 600; padding: 8px 10px;
               border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; }
-  .day-name .sections { display: none; }
+  .day-name { flex-direction: column; }
+  .day-name .sections { display: grid; grid-template-columns: repeat(var(--n), 1fr); font-weight: 400;
+                        font-size: .75rem; color: var(--muted); margin-left: 3.2rem; text-align: center; }
   .time { grid-column: 1; font-size: .75rem; color: var(--muted); padding: 0 6px;
           border-top: 1px dashed var(--line); }
   .time.full { border-top-style: solid; color: var(--text); }
@@ -50,14 +52,14 @@
     .week { display: grid; grid-template-columns: 3.2rem repeat(7, 1fr); gap: 0; overflow-x: auto;
             background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
     .js .day:not(.active), .day { display: grid; margin: 0; border: 0; border-left: 1px solid var(--line);
-                                   border-radius: 0; grid-template-columns: 0 repeat(3, 1fr); }
-    .day:first-child, .js .day:first-child:not(.active) { grid-template-columns: 3.2rem repeat(3, 1fr); grid-column: 1 / span 2; border-left: 0; }
+                                   border-radius: 0; grid-template-columns: 0 repeat(var(--n), 1fr); }
+    .day:first-child, .js .day:first-child:not(.active) { grid-template-columns: 3.2rem repeat(var(--n), 1fr); grid-column: 1 / span 2; border-left: 0; }
     .day:not(:first-child) .time { visibility: hidden; padding: 0; }
     .day-name { flex-direction: column; text-align: center; padding: 4px; }
     .js .day:not(.active), .day { grid-template-rows: 3rem repeat({{ times|length }}, var(--row)); }
-    .day-name .sections { display: grid; grid-template-columns: repeat(3, 1fr); font-weight: 400;
+    .day-name .sections { display: grid; grid-template-columns: repeat(var(--n), 1fr); font-weight: 400;
                           font-size: .72rem; color: var(--muted); }
-    .day:first-child .day-name .sections { margin-left: 3.2rem; }
+    .day:not(:first-child) .day-name .sections { margin-left: 0; }
     .slot { font-size: .75rem; padding: 2px 4px; line-height: 1.25; }
   }
   .legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: .8rem; color: var(--muted); margin-top: 12px; }
@@ -68,25 +70,25 @@
 {% endblock %}
 {% block content %}
 {% if mode == "season" and not season %}
-  <p>Ingen sesongar er lagt inn enno.{% if user.is_staff %} <a href="/admin/bookings/season/add/">Legg til ein sesong</a>.{% endif %}</p>
+  <p>Ingen sesongar er lagt inn for {{ facility.name }} enno.{% if user.is_staff %} <a href="/admin/bookings/season/add/?facility={{ facility.pk }}">Legg til ein sesong</a>.{% endif %}</p>
 {% else %}
   <div class="toolbar">
   {% if mode == "week" %}
     <h2>{{ week_title }}</h2><span class="muted">{{ week_span }}</span>
-    <a class="button" href="{% url 'week' prev_week %}" aria-label="Førre veke">&larr;</a>
-    {% if not is_current_week %}<a class="button" href="{% url 'schedule' %}">Denne veka</a>{% endif %}
-    <a class="button" href="{% url 'week' next_week %}" aria-label="Neste veke">&rarr;</a>
-    <a href="{% url 'season_default' %}">Sesongplan</a>
-    {% if user.is_authenticated %}<a class="button" href="{% url 'new_booking' %}">+ Book enkelttid</a>{% endif %}
+    <a class="button" href="{% url 'week' facility.slug prev_week %}" aria-label="Førre veke">&larr;</a>
+    {% if not is_current_week %}<a class="button" href="{% url 'week_current' facility.slug %}">Denne veka</a>{% endif %}
+    <a class="button" href="{% url 'week' facility.slug next_week %}" aria-label="Neste veke">&rarr;</a>
+    <a href="{% url 'season_default' facility.slug %}">Sesongplan</a>
+    {% if user.is_authenticated %}<a class="button" href="{% url 'new_booking' facility.slug %}">+ Book enkelttid</a>{% endif %}
   {% else %}
     <h2>Sesongplan {{ season.name }}</h2>
     {% if not season.published %}<span class="badge">Utkast</span>{% endif %}
     {% if seasons|length > 1 %}
       <select aria-label="Vel sesong" onchange="location.href = this.value">
-        {% for s in seasons %}<option value="{% if static_export %}{{ s.static_filename }}{% else %}{% url 'season' s.pk %}{% endif %}"{% if s == season %} selected{% endif %}>{{ s }}</option>{% endfor %}
+        {% for s in seasons %}<option value="{% if static_export %}{{ s.static_filename }}{% else %}{% url 'season' facility.slug s.pk %}{% endif %}"{% if s == season %} selected{% endif %}>{{ s }}</option>{% endfor %}
       </select>
     {% endif %}
-    {% if not static_export %}<a href="{% url 'schedule' %}">Denne veka</a>{% endif %}
+    {% if not static_export %}<a href="{% url 'week_current' facility.slug %}">Denne veka</a>{% endif %}
     {% if user.is_staff and not static_export %}
       <a class="button" href="/admin/bookings/trainingslot/add/?season={{ season.pk }}">+ Legg til fast tid</a>
     {% endif %}
@@ -99,7 +101,7 @@
     {% for day in days %}<button type="button" data-day="{{ day.number }}" aria-pressed="false">{{ day.short|default:day.name|slice:":3" }}</button>{% endfor %}
   </div>
 
-  <div class="week">
+  <div class="week" style="--n: {{ sections|length }}">
     {% for day in days %}
       <section class="day" data-day="{{ day.number }}" aria-label="{{ day.name }}">
         <div class="day-name">{{ day.name }}
