@@ -4,3 +4,5 @@ __pycache__/
 db.sqlite3
 .env
 staticfiles/
+# Reknearka med treningstider inneheld namn på trenarar. Hald dei utanfor repoet.
+*.xlsx

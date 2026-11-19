@@ -1,43 +1,64 @@
-"""Views: Python functions that turn a web request into a page."""
+"""Views: Python-funksjonar som lagar sidene."""
 import datetime
 
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 
-from .forms import BookingForm
-from .models import Area, Booking
+from .models import SECTIONS, WEEKDAYS, Season
+
+SLOT_MINUTES = 30
 
 
-def week_schedule(request):
-    """Show all bookings for one week (?week=YYYY-MM-DD picks the week)."""
-    try:
-        day = datetime.date.fromisoformat(request.GET.get("week", ""))
-    except ValueError:
-        day = timezone.localdate()
-    monday = day - datetime.timedelta(days=day.weekday())
-    days = [monday + datetime.timedelta(days=i) for i in range(7)]
+def _minutes(t):
+    return t.hour * 60 + t.minute
 
-    tz = timezone.get_current_timezone()
-    week_start = datetime.datetime.combine(monday, datetime.time.min, tzinfo=tz)
-    week_end = week_start + datetime.timedelta(days=7)
-    bookings = Booking.objects.filter(start__lt=week_end, end__gt=week_start).select_related("area", "team")
 
-    schedule = [
-        {"date": d, "bookings": [b for b in bookings if timezone.localtime(b.start).date() == d]}
-        for d in days
-    ]
-    return render(request, "bookings/week.html", {
-        "schedule": schedule,
-        "areas": Area.objects.all(),
-        "prev_week": monday - datetime.timedelta(days=7),
-        "next_week": monday + datetime.timedelta(days=7),
-        "monday": monday,
+def schedule(request, season_id=None):
+    """Vekeplanen for ein sesong, lagt opp som rutenett slik som i reknearket."""
+    seasons = Season.objects.all()
+    if not request.user.is_staff:
+        seasons = seasons.filter(published=True)
+
+    if season_id is not None:
+        season = get_object_or_404(seasons, pk=season_id)
+    else:
+        season = seasons.filter(published=True).first() or seasons.first()
+
+    if season is None:
+        return render(request, "bookings/schedule.html", {"season": None, "seasons": seasons})
+
+    slots = list(season.slots.select_related("group"))
+
+    # Rutenettet går frå første til siste heile time som er i bruk (minst 09–22).
+    first = min([_minutes(s.start_time) for s in slots] + [9 * 60]) // 60 * 60
+    last = -(-max([_minutes(s.end_time) for s in slots] + [22 * 60]) // 60) * 60
+
+    times = []
+    for i, m in enumerate(range(first, last, SLOT_MINUTES)):
+        times.append({"label": f"{m // 60:02d}:{m % 60:02d}", "row": i + 2, "full_hour": m % 60 == 0})
+
+    days = []
+    for number, name in WEEKDAYS:
+        day_slots = []
+        for s in slots:
+            if s.weekday != number:
+                continue
+            day_slots.append({
+                "slot": s,
+                # CSS grid: rad 1 er overskrifta, kolonne 1 er klokkeslett.
+                "row_start": (_minutes(s.start_time) - first) // SLOT_MINUTES + 2,
+                "row_end": -(-(_minutes(s.end_time) - first) // SLOT_MINUTES) + 2,
+                "col_start": s.first_section + 1,
+                "col_end": s.last_section + 2,
+            })
+        days.append({"number": number, "name": name, "slots": day_slots})
+
+    return render(request, "bookings/schedule.html", {
+        "season": season,
+        "seasons": seasons,
+        "days": days,
+        "times": times,
+        "sections": SECTIONS,
+        "total_rows": len(times) + 1,
+        "today": timezone.localdate().weekday(),
     })
-
-
-def new_booking(request):
-    form = BookingForm(request.POST or None)
-    if request.method == "POST" and form.is_valid():
-        booking = form.save()
-        return redirect(f"/?week={timezone.localtime(booking.start).date()}")
-    return render(request, "bookings/new.html", {"form": form})

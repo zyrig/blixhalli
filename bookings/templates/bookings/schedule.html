@@ -1,0 +1,127 @@
+{% extends "bookings/base.html" %}
+{% block title %}{% if season %}Treningstider {{ season.name }} – {% endif %}Blixhalli{% endblock %}
+{% block head %}
+<style>
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+  .toolbar h2 { margin: 0 8px 0 0; font-size: 1.3rem; }
+  .badge { font-size: .75rem; padding: 2px 8px; border-radius: 99px; background: var(--handball); }
+  select, .button { font: inherit; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line);
+                    background: var(--surface); color: var(--text); text-decoration: none; }
+
+  /* Dagveljar: berre på mobil */
+  .day-picker { display: flex; gap: 4px; margin-bottom: 12px; }
+  .day-picker button { flex: 1 1 0; min-width: 0; font: inherit; padding: 8px 2px; border-radius: 8px;
+                       border: 1px solid var(--line); background: var(--surface); color: var(--text); }
+  .day-picker button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+
+  .week { display: block; }
+  .day { display: grid; grid-template-columns: 3.2rem repeat(3, 1fr);
+         grid-template-rows: 2.6rem repeat({{ times|length }}, var(--row, 2.4rem));
+         background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+         margin-bottom: 16px; position: relative; }
+  .js .day:not(.active) { display: none; }
+  .day-name { grid-column: 1 / -1; grid-row: 1; font-weight: 600; padding: 8px 10px;
+              border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; }
+  .day-name .sections { display: none; }
+  .time { grid-column: 1; font-size: .75rem; color: var(--muted); padding: 0 6px;
+          border-top: 1px dashed var(--line); }
+  .time.full { border-top-style: solid; color: var(--text); }
+  .gridline { grid-column: 2 / -1; border-top: 1px dashed var(--line); }
+  .gridline.full { border-top-style: solid; }
+  .slot { margin: 2px; padding: 4px 6px; border-radius: 6px; font-size: .85rem;
+          background: var(--anna); overflow: hidden; z-index: 1; min-height: 0; }
+  .slot .meta { display: block; font-size: .72rem; color: var(--muted); }
+  .slot.tentative { border: 2px dashed var(--muted); }
+  .slot a { color: inherit; }
+  .cat-fotball { background: var(--fotball); } .cat-handball { background: var(--handball); }
+  .cat-friidrett { background: var(--friidrett); } .cat-trim { background: var(--trim); }
+  .cat-volleyball { background: var(--volleyball); } .cat-badminton { background: var(--badminton); }
+  .sec-head { display: none; }
+
+  /* Stor skjerm: heile veka ved sida av kvarandre */
+  @media (min-width: 1000px) {
+    .week { --row: 1.9rem; }
+    .day-picker { display: none; }
+    .week { display: grid; grid-template-columns: 3.2rem repeat(7, 1fr); gap: 0; overflow-x: auto;
+            background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+    .js .day:not(.active), .day { display: grid; margin: 0; border: 0; border-left: 1px solid var(--line);
+                                   border-radius: 0; grid-template-columns: 0 repeat(3, 1fr); }
+    .day:first-child, .js .day:first-child:not(.active) { grid-template-columns: 3.2rem repeat(3, 1fr); grid-column: 1 / span 2; border-left: 0; }
+    .day:not(:first-child) .time { visibility: hidden; padding: 0; }
+    .day-name { flex-direction: column; text-align: center; padding: 4px; }
+    .js .day:not(.active), .day { grid-template-rows: 3rem repeat({{ times|length }}, var(--row)); }
+    .day-name .sections { display: grid; grid-template-columns: repeat(3, 1fr); font-weight: 400;
+                          font-size: .72rem; color: var(--muted); }
+    .day:first-child .day-name .sections { margin-left: 3.2rem; }
+    .slot { font-size: .75rem; padding: 2px 4px; line-height: 1.25; }
+  }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: .8rem; color: var(--muted); margin-top: 12px; }
+  .legend span::before { content: ""; display: inline-block; width: .8em; height: .8em; border-radius: 3px;
+                         margin-right: 4px; vertical-align: -1px; background: var(--c); }
+  .notes { white-space: pre-line; margin-top: 16px; color: var(--muted); }
+</style>
+{% endblock %}
+{% block content %}
+{% if not season %}
+  <p>Ingen sesongar er lagt inn enno.{% if user.is_staff %} <a href="/admin/bookings/season/add/">Legg til ein sesong</a>.{% endif %}</p>
+{% else %}
+  <div class="toolbar">
+    <h2>{{ season.name }}</h2>
+    {% if not season.published %}<span class="badge">Utkast</span>{% endif %}
+    {% if seasons|length > 1 %}
+      <select aria-label="Vel sesong" onchange="location.href='/sesong/' + this.value + '/'">
+        {% for s in seasons %}<option value="{{ s.pk }}"{% if s == season %} selected{% endif %}>{{ s }}</option>{% endfor %}
+      </select>
+    {% endif %}
+    {% if user.is_staff %}
+      <a class="button" href="/admin/bookings/trainingslot/add/?season={{ season.pk }}">+ Legg til treningstid</a>
+    {% endif %}
+  </div>
+
+  <div class="day-picker" role="group" aria-label="Vel dag">
+    {% for day in days %}<button type="button" data-day="{{ day.number }}" aria-pressed="false">{{ day.name|slice:":3" }}</button>{% endfor %}
+  </div>
+
+  <div class="week">
+    {% for day in days %}
+      <section class="day" data-day="{{ day.number }}" aria-label="{{ day.name }}">
+        <div class="day-name">{{ day.name }}
+          <span class="sections">{% for n, label in sections %}<span>{{ label }}</span>{% endfor %}</span>
+        </div>
+        {% for t in times %}
+          <div class="time{% if t.full_hour %} full{% endif %}" style="grid-row: {{ t.row }}">{% if t.full_hour %}{{ t.label }}{% endif %}</div>
+          <div class="gridline{% if t.full_hour %} full{% endif %}" style="grid-row: {{ t.row }}"></div>
+        {% endfor %}
+        {% for item in day.slots %}{% with s=item.slot %}
+          <div class="slot cat-{{ s.group.category }}{% if s.tentative %} tentative{% endif %}"
+               style="grid-row: {{ item.row_start }} / {{ item.row_end }}; grid-column: {{ item.col_start }} / {{ item.col_end }}"
+               title="{{ s.group }} · {{ s.start_time|time:'H:i' }}–{{ s.end_time|time:'H:i' }} · {{ s.sections_label }}">
+            {% if user.is_staff %}<a href="/admin/bookings/trainingslot/{{ s.pk }}/change/">{{ s.group }}</a>{% else %}{{ s.group }}{% endif %}
+            <span class="meta">{{ s.start_time|time:"H:i" }}–{{ s.end_time|time:"H:i" }} · {{ s.sections_label }}{% if s.tentative %} · ikkje avklart{% endif %}{% if s.note %} · {{ s.note }}{% endif %}{% if s.valid_from or s.valid_to %} · {% if s.valid_from %}frå {{ s.valid_from|date:"j.n." }}{% endif %}{% if s.valid_to %} til {{ s.valid_to|date:"j.n." }}{% endif %}{% endif %}</span>
+          </div>
+        {% endwith %}{% endfor %}
+      </section>
+    {% endfor %}
+  </div>
+
+  <div class="legend">
+    <span style="--c: var(--fotball)">Fotball</span><span style="--c: var(--handball)">Handball</span>
+    <span style="--c: var(--friidrett)">Friidrett/turn</span><span style="--c: var(--trim)">Trim</span>
+    <span style="--c: var(--volleyball)">Volleyball</span><span style="--c: var(--badminton)">Badminton</span>
+    <span style="--c: var(--anna)">Anna</span>
+  </div>
+  {% if season.notes %}<div class="notes">{{ season.notes }}</div>{% endif %}
+
+  <script>
+    // På mobil: vis éin dag om gongen. Startar på dagens vekedag.
+    document.documentElement.classList.add("js");
+    const buttons = document.querySelectorAll(".day-picker button");
+    function show(day) {
+      document.querySelectorAll(".day").forEach(el => el.classList.toggle("active", el.dataset.day === day));
+      buttons.forEach(b => b.setAttribute("aria-pressed", b.dataset.day === day));
+    }
+    buttons.forEach(b => b.addEventListener("click", () => show(b.dataset.day)));
+    show("{{ today }}");
+  </script>
+{% endif %}
+{% endblock %}
