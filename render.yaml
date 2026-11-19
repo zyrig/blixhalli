@@ -2,7 +2,7 @@
 # Verdiar med «sync: false» fyller du inn sjølv i Render når du opprettar tenesta.
 services:
   - type: web
-    name: blixhalli
+    name: treningstider
     runtime: python
     region: frankfurt
     plan: free            # byt til «starter» for ein app som alltid er vaken (ikkje søv)

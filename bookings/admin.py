@@ -4,8 +4,8 @@ from django.contrib import admin, messages
 from . import accounts
 from .models import AccountRequest, Booking, Cancellation, Facility, Group, Season, TrainingRequest, TrainingSlot
 
-admin.site.site_header = "Blixhalli – administrasjon"
-admin.site.site_title = "Blixhalli"
+admin.site.site_header = "Treningstider – administrasjon"
+admin.site.site_title = "Treningstider"
 admin.site.site_url = "/"
 
 

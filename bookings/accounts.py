@@ -43,9 +43,9 @@ def set_password_link(user, request):
 def send_invitation(user, request):
     groups = ", ".join(g.name for g in user.led_groups.all()) or "ingen lag enno"
     send_mail(
-        "Du har fått brukar på Treningstider Blixhalli",
+        "Du har fått brukar på Treningstider",
         f"Hei {user.first_name or user.email}!\n\n"
-        f"Du har fått brukar på Treningstider Blixhalli, som lagleiar for: {groups}.\n\n"
+        f"Du har fått brukar på Treningstider, som lagleiar for: {groups}.\n\n"
         f"Lag passordet ditt her:\n{set_password_link(user, request)}\n\n"
         f"Brukarnamnet ditt er e-postadressa di: {user.email}\n"
         f"Lenkja varer i {_days()} dagar. Har ho gått ut, bruk «Gløymt passord» på innloggingssida.\n",
@@ -74,7 +74,7 @@ def reject(account_request, by, comment=""):
     account_request.save()
     reason = f"\n\nKommentar: {account_request.admin_comment}" if account_request.admin_comment else ""
     send_mail(
-        "Førespurnaden din om brukar på Treningstider Blixhalli",
+        "Førespurnaden din om brukar på Treningstider",
         f"Hei {account_request.name}!\n\nFørespurnaden din om brukar vart dessverre ikkje godkjend.{reason}\n",
         None,
         [account_request.email],

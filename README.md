@@ -94,7 +94,7 @@ tolka, så set **gjeld frå / gjeld til** for hand der det trengst.
 ## Førehandsvising på GitHub Pages
 
 Ein versjon av vekeplanen som berre kan lesast, ligg på
-https://zyrig.github.io/blixhalli/. GitHub byggjer han på nytt kvar gong noko
+https://zyrig.github.io/treningstider/. GitHub byggjer han på nytt kvar gong noko
 blir pusha til `main` (sjå `.github/workflows/pages.yml`).
 
 Data kjem frå `data/timeplan.json`. Pages-sida og repoet er offentlege, så
@@ -151,7 +151,7 @@ tilkoplinga til Supabase er berre IPv6.
 
 **2. Appen i Render**
 1. Logg inn på Render med GitHub-kontoen din.
-2. Vel **New → Blueprint**, og vel repoet `blixhalli`.
+2. Vel **New → Blueprint**, og vel repoet `treningstider`.
 3. Fyll inn verdiane Render spør om:
 
 | Variabel | Kva du skriv |
@@ -162,14 +162,14 @@ tilkoplinga til Supabase er berre IPv6.
 | `DJANGO_FROM_EMAIL`, `EMAIL_HOST`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` | e-postoppsett (sjå under). Kan stå tomme i starten. |
 
 4. Trykk **Deploy**. Første gong blir tabellane laga, tidene frå `data/timeplan.json`
-   lasta inn og administratoren oppretta. Appen får ei adresse som `https://blixhalli.onrender.com`.
+   lasta inn og administratoren oppretta. Appen får ei adresse som `https://treningstider.onrender.com`.
 
 Kvar gong noko blir pusha til `main`, legg Render ut den nye versjonen automatisk.
 
 **E-post** (invitasjonar, «Gløymt passord», varsel). Utan dette blir e-post berre skriven til
 loggen i Render. Det enklaste er Gmail med eit *app-passord* (krev totrinnsinnlogging på Google-kontoen):
 `EMAIL_HOST=smtp.gmail.com`, `EMAIL_HOST_USER=<gmail-adressa>`, `EMAIL_HOST_PASSWORD=<app-passordet>`,
-`DJANGO_FROM_EMAIL=Treningstider Blixhalli <gmail-adressa>`. Seinare kan ei teneste som Brevo eller
+`DJANGO_FROM_EMAIL=Treningstider <gmail-adressa>`. Seinare kan ei teneste som Brevo eller
 Resend og ei eiga avsendaradresse gi betre levering.
 
 **Godt å vite**
@@ -189,7 +189,7 @@ Resend og ei eiga avsendaradresse gi betre levering.
 | `DJANGO_DEBUG` | `0` i drift |
 | `DJANGO_ALLOWED_HOSTS` | `treningstider.idrettslaget.no` (Render-adressa blir lagd til automatisk) |
 | `DJANGO_ADMIN_EMAIL`, `DJANGO_ADMIN_PASSWORD` | første administrator |
-| `DJANGO_FROM_EMAIL` | `Treningstider Blixhalli <post@example.no>` |
+| `DJANGO_FROM_EMAIL` | `Treningstider <post@example.no>` |
 | `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` | SMTP-tenaren som sender e-post |
 
 ## Lære meir
