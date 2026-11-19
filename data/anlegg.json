@@ -1,0 +1,8 @@
+[
+  {"slug": "blixhalli", "name": "Blixhalli", "kind": "hall", "section_labels": "1/3,2/3,3/3", "units": "", "order": 0},
+  {"slug": "kunstgras-11", "name": "Kunstgras 11'ar", "kind": "bane", "section_labels": "A,B,C,D",
+   "units": "1/1: A-D\n1/2: A-B, C-D\n1/4: A, B, C, D", "order": 1},
+  {"slug": "kunstgras-7", "name": "Kunstgras 7'ar", "kind": "bane", "section_labels": "Heile", "units": "", "order": 2},
+  {"slug": "grasbane", "name": "Grasbane", "kind": "bane", "section_labels": "A,B",
+   "units": "1/1: A-B\n1/2: A, B", "order": 3}
+]

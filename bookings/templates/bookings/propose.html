@@ -1,0 +1,11 @@
+{% extends "bookings/base.html" %}
+{% block title %}Føreslå anna tid – Treningstider{% endblock %}
+{% block content %}
+<div class="narrow">
+  <h2>Føreslå anna tid</h2>
+  <div class="card"><strong>{{ r.group }}</strong> søkte om:<br>{{ r.summary }}
+    {% if clash %}<div class="warn">Kolliderer med {{ clash }} ({{ clash.sections_label }}).</div>{% endif %}</div>
+  <p>Laget får forslaget på e-post og kan godta det med eitt trykk under «Mine lag».</p>
+  <form method="post" class="card">{% csrf_token %}{{ form.as_div }}<button type="submit" class="btn">Send forslag</button></form>
+</div>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "bookings/base.html" %}
+{% block title %}Søknader – Treningstider{% endblock %}
+{% block content %}
+<div class="narrow" style="max-width:760px">
+  <h2>Søknader om faste tider</h2>
+  {% for r in open_requests %}
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">
+        <strong>{{ r.group }}</strong>
+        <span class="status status-{{ r.status }}">{{ r.get_status_display }}</span>
+      </div>
+      <div>{{ r.summary }}</div>
+      <div class="muted">Søkt av {{ r.created_by.get_full_name|default:r.created_by.email }}, {{ r.created_at|date:"j.n.Y H:i" }}</div>
+      {% if r.message %}<p>«{{ r.message }}»</p>{% endif %}
+      {% if r.status == "proposed" %}
+        <p>Føreslått: <strong>{{ r.summary_proposed }}</strong><br><span class="muted">Ventar på svar frå laget.</span></p>
+      {% endif %}
+      {% if r.clash %}<div class="warn">Kolliderer med {{ r.clash }} ({{ r.clash.sections_label }}).</div>{% endif %}
+      {% if r.status == "pending" %}
+      <div class="actions">
+        <form method="post" action="{% url 'approve_request' r.pk %}">{% csrf_token %}
+          <button class="btn" type="submit"{% if r.clash %} disabled title="Tida er oppteken"{% endif %}>Godkjenn</button></form>
+        <a class="btn secondary" href="{% url 'propose_request' r.pk %}">Føreslå anna tid</a>
+        <details><summary class="linklike">Avslå</summary>
+          <form method="post" action="{% url 'reject_request' r.pk %}">{% csrf_token %}{{ reject_form.as_div }}
+            <button class="btn secondary" type="submit">Avslå søknaden</button></form>
+        </details>
+      </div>
+      {% endif %}
+    </div>
+  {% empty %}
+    <p class="muted">Ingen søknader ventar.</p>
+  {% endfor %}
+
+  {% if recent %}
+  <h3>Sist handsama</h3>
+  <div class="card" style="padding:0 8px; overflow-x:auto"><table class="list">
+    {% for r in recent %}
+      <tr><td><strong>{{ r.group }}</strong><br><span class="muted">{{ r.summary }}</span></td>
+          <td style="text-align:right"><span class="status status-{{ r.status }}">{{ r.get_status_display }}</span></td></tr>
+    {% endfor %}
+  </table></div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -14,23 +14,52 @@
     <p class="muted">Du er ikkje lagleiar for noko lag enno. Ta kontakt med ein administrator.</p>
   {% endif %}
   {% if slots %}
-  <h3>Treningstidene våre</h3>
+  <h3>Faste treningstider</h3>
   <div class="card" style="padding:0 8px; overflow-x:auto">
   <table class="list">
     {% for s in slots %}
       <tr><td><strong>{{ s.get_weekday_display }} {{ s.start_time|time:"H:i" }}–{{ s.end_time|time:"H:i" }}</strong><br>
-              <span class="muted">{{ s.group }} · {{ s.season.facility }} {{ s.sections_label }} · {{ s.season.name }}{% if s.tentative %} · ikkje avklart{% endif %}</span></td>
+              <span class="muted">{{ s.group }} · {{ s.facility }} {{ s.sections_label }}{% with r=s.effective_range %}{% if r.0 or r.1 %} · {{ r.0|date:"j.n.y"|default:"…" }}–{{ r.1|date:"j.n.y"|default:"…" }}{% endif %}{% endwith %}{% if s.tentative %} · ikkje avklart{% endif %}</span></td>
           <td style="text-align:right"><a href="{% url 'cancel_slot' s.pk %}">Avlys ein dato</a></td></tr>
     {% endfor %}
   </table></div>
   {% endif %}
-  {% if groups %}<p>{% for f in facilities %}<a class="btn" href="{% url 'new_booking' f.slug %}" style="margin:0 6px 6px 0">+ Book enkelttid{% if facilities|length > 1 %}: {{ f.name }}{% endif %}</a>{% endfor %}</p>{% endif %}
+  {% if groups %}
+  <div class="card">
+    <strong>Søk om fast tid</strong> <span class="muted">(kvar veke i ein periode, administrator godkjenner)</span>
+    <div class="actions">{% for f in facilities %}<a class="btn" href="{% url 'new_request' f.slug %}">{{ f.name }}</a>{% endfor %}</div>
+    <strong style="display:block;margin-top:12px">Book enkelttid</strong> <span class="muted">(éin dato, godkjend med ein gong viss ledig)</span>
+    <div class="actions">{% for f in facilities %}<a class="btn secondary" href="{% url 'new_booking' f.slug %}">{{ f.name }}</a>{% endfor %}</div>
+  </div>
+  {% endif %}
+
+  {% if requests %}
+  <h3>Søknader</h3>
+  {% for r in requests %}
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">
+        <strong>{{ r.group }}</strong><span class="status status-{{ r.status }}">{{ r.get_status_display }}</span>
+      </div>
+      <div class="muted">{{ r.summary }}</div>
+      {% if r.admin_comment %}<p>Kommentar: {{ r.admin_comment }}</p>{% endif %}
+      {% if r.status == "proposed" %}
+        <p>Forslag: <strong>{{ r.summary_proposed }}</strong></p>
+        <div class="actions">
+          <form method="post" action="{% url 'answer_proposal' r.pk %}">{% csrf_token %}<input type="hidden" name="answer" value="accept"><button class="btn" type="submit">Godta forslaget</button></form>
+          <form method="post" action="{% url 'answer_proposal' r.pk %}">{% csrf_token %}<input type="hidden" name="answer" value="decline"><button class="btn secondary" type="submit">Avslå</button></form>
+        </div>
+      {% elif r.status == "pending" %}
+        <form method="post" action="{% url 'withdraw_request' r.pk %}" onsubmit="return confirm('Trekkje søknaden?')">{% csrf_token %}<button class="linklike" type="submit">Trekk søknaden</button></form>
+      {% endif %}
+    </div>
+  {% endfor %}
+  {% endif %}
 
   {% if cancellations %}
   <h3>Avlysingar framover</h3>
   <div class="card" style="padding:0 8px; overflow-x:auto"><table class="list">
     {% for c in cancellations %}
-      <tr><td>{{ c.date|date:"D j.n." }}</td><td>{{ c.slot.group }}<br><span class="muted">{{ c.slot.season.facility }}</span></td>
+      <tr><td>{{ c.date|date:"D j.n." }}</td><td>{{ c.slot.group }}<br><span class="muted">{{ c.slot.facility }}</span></td>
           <td>{{ c.slot.start_time|time:"H:i" }}–{{ c.slot.end_time|time:"H:i" }}</td><td>{{ c.reason }}</td>
           <td><form method="post" action="{% url 'undo_cancellation' c.pk %}">{% csrf_token %}<button class="linklike" type="submit">Angre</button></form></td></tr>
     {% endfor %}

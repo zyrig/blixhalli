@@ -1,0 +1,14 @@
+{% extends "bookings/base.html" %}
+{% block title %}Søk om fast tid – {{ facility.name }}{% endblock %}
+{% block content %}
+<div class="narrow">
+  <h2>Søk om fast tid: {{ facility.name }}</h2>
+  <p>Ei fast tid gjeld same vekedag og klokkeslett kvar veke mellom start- og sluttdatoen.
+     Ein administrator godkjenner søknaden, eller føreslår ei anna tid.</p>
+  {% if facilities|length > 1 %}
+  <p class="muted">Anna anlegg:
+    {% for f in facilities %}{% if f != facility %}<a href="{% url 'new_request' f.slug %}">{{ f.name }}</a>{% if not forloop.last %} · {% endif %}{% endif %}{% endfor %}</p>
+  {% endif %}
+  <form method="post" class="card">{% csrf_token %}{{ form.as_div }}<button type="submit" class="btn">Send søknad</button></form>
+</div>
+{% endblock %}

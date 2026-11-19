@@ -109,7 +109,7 @@ class Command(BaseCommand):
                 name, tentative = clean_name(value)
                 group, _ = Group.objects.get_or_create(name=name, defaults={"category": Group.guess_category(name)})
                 slot = TrainingSlot(
-                    season=season, group=group, weekday=weekday,
+                    facility=self.facility, season=season, group=group, weekday=weekday,
                     start_time=times[r1][0], end_time=times[r2][1],
                     first_section=first_section, last_section=last_section, tentative=tentative,
                 )

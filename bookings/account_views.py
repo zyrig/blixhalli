@@ -2,7 +2,9 @@
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.shortcuts import redirect, render
+from django.utils import timezone
 
 from . import accounts
 from .forms import AccountRequestForm, InviteForm
@@ -23,13 +25,17 @@ def request_account(request):
 @login_required
 def mine(request):
     groups = request.user.led_groups.all()
-    slots = TrainingSlot.objects.filter(group__in=groups)
+    slots = TrainingSlot.objects.filter(group__in=groups).select_related("group", "facility", "season")
     if not request.user.is_staff:
-        slots = slots.filter(season__published=True)  # utkast er berre synlege for administratorar
-    slots = slots.select_related("group", "season__facility").order_by(
-        "season__facility", "-season__name", "weekday", "start_time")
+        # utkast er berre synlege for administratorar
+        slots = slots.filter(Q(season__isnull=True) | Q(season__published=True))
+    today = timezone.localdate()
+    slots = [s for s in slots.order_by("facility", "weekday", "start_time")
+             if s.effective_range()[1] is None or s.effective_range()[1] >= today]
     from .leader_views import upcoming_for
-    context = {"groups": groups, "slots": slots, **upcoming_for(groups)}
+    from .models import TrainingRequest
+    context = {"groups": groups, "slots": slots, **upcoming_for(groups),
+               "requests": TrainingRequest.objects.filter(group__in=groups).select_related("group", "facility")[:30]}
     if request.user.is_staff:
         context["pending_requests"] = AccountRequest.objects.filter(status=AccountRequest.PENDING).count()
     return render(request, "bookings/mine.html", context)

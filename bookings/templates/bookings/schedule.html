@@ -78,8 +78,11 @@
     <a class="button" href="{% url 'week' facility.slug prev_week %}" aria-label="Førre veke">&larr;</a>
     {% if not is_current_week %}<a class="button" href="{% url 'week_current' facility.slug %}">Denne veka</a>{% endif %}
     <a class="button" href="{% url 'week' facility.slug next_week %}" aria-label="Neste veke">&rarr;</a>
-    <a href="{% url 'season_default' facility.slug %}">Sesongplan</a>
-    {% if user.is_authenticated %}<a class="button" href="{% url 'new_booking' facility.slug %}">+ Book enkelttid</a>{% endif %}
+    {% if has_seasons %}<a href="{% url 'season_default' facility.slug %}">Sesongplan</a>{% endif %}
+    {% if user.is_authenticated %}
+      <a class="button" href="{% url 'new_request' facility.slug %}">+ Søk om fast tid</a>
+      <a class="button" href="{% url 'new_booking' facility.slug %}">+ Book enkelttid</a>
+    {% endif %}
   {% else %}
     <h2>Sesongplan {{ season.name }}</h2>
     {% if not season.published %}<span class="badge">Utkast</span>{% endif %}
@@ -94,7 +97,7 @@
     {% endif %}
   {% endif %}
   </div>
-  {% if mode == "week" and no_season %}<p class="muted">Ingen publisert sesong gjeld for denne veka.</p>{% endif %}
+  {% if mode == "week" and empty_week %}<p class="muted">Ingen treningstider på {{ facility.name }} denne veka.</p>{% endif %}
   {% if mode == "week" and drafts %}<p class="muted">Inkluderer utkast: {% for s in drafts %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% endfor %} (berre synleg for administratorar).</p>{% endif %}
 
   <div class="day-picker" role="group" aria-label="Vel dag">

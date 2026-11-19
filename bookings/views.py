@@ -1,6 +1,7 @@
 """Views: Python-funksjonar som lagar sidene."""
 import datetime
 
+from django.db.models import Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -108,7 +109,7 @@ def schedule_context(facility, season, seasons, static_export=False, user=None):
         entries = [
             _entry(s, "fast", _validity(s),
                    reverse("admin:bookings_trainingslot_change", args=[s.pk]) if show_admin_links else None)
-            for s in season.slots.select_related("group", "season__facility") if s.weekday == number
+            for s in season.slots.select_related("group", "facility", "season") if s.weekday == number
         ]
         days.append({"number": number, "name": name, "entries": entries})
     context.update(build_grid(days, facility))
@@ -134,9 +135,13 @@ def week_view(request, facility, day=None):
     user = request.user
 
     seasons = [s for s in visible_seasons(user, facility) if s.covers(monday) or s.covers(sunday)]
-    slots = list(TrainingSlot.objects.filter(season__in=seasons).select_related("group", "season__facility"))
+    # Faste tider: utan sesong, eller i ein sesong brukaren kan sjå (utkast berre for administratorar)
+    slots = TrainingSlot.objects.filter(facility=facility).select_related("group", "facility", "season")
+    if not user.is_staff:
+        slots = slots.filter(Q(season__isnull=True) | Q(season__published=True))
+    slots = list(slots)
     cancellations = {(c.slot_id, c.date): c for c in
-                     Cancellation.objects.filter(slot__season__facility=facility, date__range=(monday, sunday))}
+                     Cancellation.objects.filter(slot__facility=facility, date__range=(monday, sunday))}
     bookings = list(Booking.objects.filter(facility=facility, date__range=(monday, sunday), status=Booking.APPROVED)
                     .select_related("group", "facility"))
 
@@ -176,7 +181,8 @@ def week_view(request, facility, day=None):
         "next_week": (monday + datetime.timedelta(days=7)).isoformat(),
         "is_current_week": monday <= timezone.localdate() <= sunday,
         "drafts": [s for s in seasons if not s.published],
-        "no_season": not seasons,
+        "empty_week": not any(d["entries"] for d in days),
+        "has_seasons": facility.seasons.exists(),
     }
     context.update(build_grid(days, facility))
     return render(request, "bookings/schedule.html", context)

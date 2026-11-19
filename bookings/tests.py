@@ -247,7 +247,7 @@ class LeaderPermissionAndWeekTests(TestCase):
     def book(self, group, start=17, end=18, date=None):
         return self.client.post("/blixhalli/enkelttid/ny/", {
             "group": group.pk, "date": (date or self.monday).isoformat(), "start_time": f"{start:02d}:00",
-            "end_time": f"{end:02d}:00", "first_section": 1, "last_section": 3, "note": "Ekstratrening"})
+            "end_time": f"{end:02d}:00", "unit": "1-3", "note": "Ekstratrening"})
 
     def test_everyone_sees_who_has_which_time(self):
         self.client.logout()
@@ -412,7 +412,7 @@ class FacilityTests(TestCase):
         self.assertNotContains(r, ">1/3</option>")
         r = self.client.post("/kunstgras/enkelttid/ny/", {
             "group": self.group.pk, "date": self.monday.isoformat(), "start_time": "17:00", "end_time": "18:00",
-            "first_section": 2, "last_section": 2})
+            "unit": "2-2"})
         from .models import Booking
         self.assertEqual(Booking.objects.get().facility, self.pitch)
 
@@ -420,3 +420,190 @@ class FacilityTests(TestCase):
         from .models import Facility
         with self.assertRaises(ValidationError):
             Facility(name="Mine", slug="mine").full_clean()
+
+
+
+class UnitsAndRequestsTests(TestCase):
+    """Delar som kan bookast per anlegg, og søknader om faste tider med godkjenning."""
+
+    def setUp(self):
+        from django.utils import timezone
+        call_command("ensure_facilities", stdout=open("/dev/null", "w"))
+        from .models import Facility
+        self.f11 = Facility.objects.get(slug="kunstgras-11")
+        self.f7 = Facility.objects.get(slug="kunstgras-7")
+        self.gras = Facility.objects.get(slug="grasbane")
+        self.g12 = Group.objects.create(name="Fotball G12", category="fotball")
+        self.j14 = Group.objects.create(name="Fotball J14", category="fotball")
+        self.kari = User.objects.create_user("kari@example.com", "kari@example.com", "pw", first_name="Kari")
+        self.g12.leaders.add(self.kari)
+        self.admin = User.objects.create_user("admin@example.com", "admin@example.com", "pw", is_staff=True)
+        today = timezone.localdate()
+        self.monday = today + datetime.timedelta(days=7 - today.weekday())
+        self.end = self.monday + datetime.timedelta(days=60)
+
+    def request_data(self, **kw):
+        data = {"group": self.g12.pk, "weekday": 0, "start_time": "17:00", "end_time": "18:30", "unit": "1-2",
+                "valid_from": self.monday.isoformat(), "valid_to": self.end.isoformat(), "message": "Takk"}
+        data.update(kw)
+        return data
+
+    # --- delar ---
+
+    def test_units_per_facility(self):
+        sizes = {size: [label for *_, label in items] for size, items in self.f11.unit_options()}
+        self.assertEqual(sizes, {"Heile bana": ["Heile bana"], "1/2 bane": ["A + B", "C + D"],
+                                 "1/4 bane": ["A", "B", "C", "D"]})
+        self.assertTrue(self.f11.allows(1, 2))
+        self.assertFalse(self.f11.allows(2, 3))  # B + C er ikkje ein halvdel
+        self.assertEqual(self.f11.sections_label(3, 4), "1/2 (C–D)")
+        self.assertEqual(self.f11.sections_label(2, 2), "1/4 (B)")
+        self.assertEqual([size for size, _ in self.gras.unit_options()], ["Heile bana", "1/2 bane"])
+        self.assertEqual(self.f7.unit_options(), [("Heile bana", [(1, 1, "Heile bana")])])
+
+    def test_invalid_units_config_rejected(self):
+        from .models import Facility
+        f = Facility(name="X", slug="x", section_labels="A,B", units="1/2: A, Q")
+        with self.assertRaises(ValidationError):
+            f.full_clean()
+
+    def test_half_pitch_that_is_not_a_half_is_rejected(self):
+        self.client.force_login(self.kari)
+        r = self.client.post("/kunstgras-11/sok/", self.request_data(unit="2-3"))
+        self.assertTrue(r.context["form"].has_error("unit"))
+
+    def test_seven_a_side_has_no_division_choice(self):
+        self.client.force_login(self.kari)
+        r = self.client.get("/kunstgras-7/sok/")
+        self.assertContains(r, ">Heile bana</option>")
+        self.assertNotContains(r, "<optgroup")
+
+    # --- søknader ---
+
+    def test_request_approve_flow(self):
+        from django.core import mail
+        from .models import TrainingRequest
+        self.client.force_login(self.kari)
+        r = self.client.post("/kunstgras-11/sok/", self.request_data())
+        self.assertRedirects(r, "/mine/")
+        req = TrainingRequest.objects.get()
+        self.assertEqual((req.status, req.facility, req.first_section, req.last_section),
+                         ("pending", self.f11, 1, 2))
+        self.assertIn("admin@example.com", mail.outbox[-1].to)
+        # Ikkje synleg i vekeplanen før godkjenning
+        week = f"/kunstgras-11/veke/{self.monday.isoformat()}/"
+        self.assertNotContains(self.client.get(week), "Fotball G12")
+
+        self.client.force_login(self.admin)
+        self.assertContains(self.client.get("/soknader/"), "Fotball G12")
+        self.client.post(f"/soknader/{req.pk}/godkjenn/")
+        req.refresh_from_db()
+        self.assertEqual(req.status, "approved")
+        self.assertEqual((req.slot.valid_from, req.slot.valid_to, req.slot.facility), (self.monday, self.end, self.f11))
+        self.assertIn("kari@example.com", mail.outbox[-1].to)
+        self.assertContains(self.client.get(week), "Fotball G12")
+        # Utanfor perioden blir tida ikkje vist
+        after = self.end + datetime.timedelta(days=7)
+        self.assertNotContains(self.client.get(f"/kunstgras-11/veke/{after.isoformat()}/"), "Fotball G12")
+
+    def test_other_half_is_free_but_same_half_clashes(self):
+        from .models import TrainingSlot
+        TrainingSlot.objects.create(facility=self.f11, group=self.j14, weekday=0, start_time=t(17), end_time=t(18),
+                                    first_section=1, last_section=2, valid_from=self.monday, valid_to=self.end)
+        self.client.force_login(self.kari)
+        self.client.post("/kunstgras-11/sok/", self.request_data(unit="3-4"))
+        self.client.post("/kunstgras-11/sok/", self.request_data(unit="2-2"))
+        from .models import TrainingRequest
+        free, taken = TrainingRequest.objects.order_by("pk")
+        self.assertIsNone(free.find_clash())
+        self.assertIsNotNone(taken.find_clash())
+        self.client.force_login(self.admin)
+        self.client.post(f"/soknader/{taken.pk}/godkjenn/")
+        taken.refresh_from_db()
+        self.assertEqual(taken.status, "pending")  # kan ikkje godkjennast når tida er oppteken
+
+    def test_clash_only_when_periods_overlap(self):
+        from .models import TrainingSlot
+        before_end = self.monday - datetime.timedelta(days=1)
+        TrainingSlot.objects.create(facility=self.f11, group=self.j14, weekday=0, start_time=t(17), end_time=t(18),
+                                    first_section=1, last_section=4, valid_from=datetime.date(2026, 1, 1),
+                                    valid_to=before_end)
+        self.client.force_login(self.kari)
+        self.client.post("/kunstgras-11/sok/", self.request_data())
+        from .models import TrainingRequest
+        self.assertIsNone(TrainingRequest.objects.get().find_clash())
+
+    def test_propose_and_accept(self):
+        from django.core import mail
+        from .models import TrainingRequest, TrainingSlot
+        TrainingSlot.objects.create(facility=self.f11, group=self.j14, weekday=0, start_time=t(17), end_time=t(18),
+                                    first_section=1, last_section=2, valid_from=self.monday, valid_to=self.end)
+        self.client.force_login(self.kari)
+        self.client.post("/kunstgras-11/sok/", self.request_data())
+        req = TrainingRequest.objects.get()
+        self.client.force_login(self.admin)
+        r = self.client.post(f"/soknader/{req.pk}/foresla/", {
+            "proposed_weekday": 0, "proposed_start_time": "17:00", "proposed_end_time": "18:30", "unit": "3-4",
+            "proposed_valid_from": self.monday.isoformat(), "proposed_valid_to": self.end.isoformat(),
+            "admin_comment": "A+B er opptekne, de kan få C+D."})
+        self.assertRedirects(r, "/soknader/")
+        req.refresh_from_db()
+        self.assertEqual(req.status, "proposed")
+        self.assertIn("C+D", mail.outbox[-1].body)
+        self.client.force_login(self.kari)
+        self.assertContains(self.client.get("/mine/"), "Godta forslaget")
+        self.client.post(f"/soknad/{req.pk}/svar/", {"answer": "accept"})
+        req.refresh_from_db()
+        self.assertEqual(req.status, "approved")
+        self.assertEqual((req.slot.first_section, req.slot.last_section), (3, 4))
+
+    def test_proposal_that_also_clashes_is_rejected(self):
+        from .models import TrainingRequest, TrainingSlot
+        TrainingSlot.objects.create(facility=self.f11, group=self.j14, weekday=0, start_time=t(17), end_time=t(18),
+                                    first_section=1, last_section=4, valid_from=self.monday, valid_to=self.end)
+        self.client.force_login(self.kari)
+        self.client.post("/kunstgras-11/sok/", self.request_data())
+        req = TrainingRequest.objects.get()
+        self.client.force_login(self.admin)
+        r = self.client.post(f"/soknader/{req.pk}/foresla/", {
+            "proposed_weekday": 0, "proposed_start_time": "17:00", "proposed_end_time": "18:30", "unit": "3-4",
+            "proposed_valid_from": self.monday.isoformat(), "proposed_valid_to": self.end.isoformat()})
+        self.assertContains(r, "kolliderer òg")
+
+    def test_reject_and_withdraw(self):
+        from .models import TrainingRequest
+        self.client.force_login(self.kari)
+        self.client.post("/kunstgras-11/sok/", self.request_data())
+        self.client.post("/kunstgras-11/sok/", self.request_data(weekday=2))
+        first, second = TrainingRequest.objects.order_by("pk")
+        self.client.post(f"/soknad/{second.pk}/trekk/")
+        second.refresh_from_db()
+        self.assertEqual(second.status, "withdrawn")
+        self.client.force_login(self.admin)
+        self.client.post(f"/soknader/{first.pk}/avsla/", {"comment": "Fullt"})
+        first.refresh_from_db()
+        self.assertEqual((first.status, first.admin_comment), ("rejected", "Fullt"))
+
+    def test_leader_can_only_request_for_own_team_and_not_manage_others(self):
+        from .models import TrainingRequest
+        self.client.force_login(self.kari)
+        r = self.client.post("/kunstgras-11/sok/", self.request_data(group=self.j14.pk))
+        self.assertTrue(r.context["form"].has_error("group"))
+        other = TrainingRequest.objects.create(facility=self.f11, group=self.j14, weekday=0, start_time=t(17),
+                                               end_time=t(18), valid_from=self.monday, valid_to=self.end)
+        self.assertEqual(self.client.post(f"/soknad/{other.pk}/trekk/").status_code, 403)
+        self.assertNotEqual(self.client.get("/soknader/").status_code, 200)  # berre administratorar
+
+    def test_request_dates_must_be_valid(self):
+        self.client.force_login(self.kari)
+        r = self.client.post("/kunstgras-11/sok/", self.request_data(valid_to=(self.monday - datetime.timedelta(days=1)).isoformat()))
+        self.assertContains(r, "Sluttdato kan ikkje vere før startdato")
+
+    def test_ensure_facilities_is_idempotent_and_keeps_admin_changes(self):
+        from .models import Facility
+        self.f11.units = "1/2: A-B, C-D"
+        self.f11.save()
+        call_command("ensure_facilities", stdout=open("/dev/null", "w"))
+        self.assertEqual(Facility.objects.count(), 4)
+        self.f11.refresh_from_db()
+        self.assertEqual(self.f11.units, "1/2: A-B, C-D")

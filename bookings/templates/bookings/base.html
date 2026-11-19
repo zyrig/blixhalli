@@ -37,7 +37,8 @@
     .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
     form p, form > div { margin: 0 0 14px; }
     label { display: block; font-weight: 600; margin-bottom: 4px; }
-    input[type=text], input[type=email], input[type=password], input[type=tel], textarea, select.wide {
+    input[type=text], input[type=email], input[type=password], input[type=tel], input[type=date],
+    input[type=time], textarea, form select, select.wide {
       width: 100%; font: inherit; padding: 10px; border-radius: 8px; border: 1px solid var(--line);
       background: var(--bg); color: var(--text); }
     ul#id_groups, form ul:not(.errorlist) { list-style: none; padding: 0; margin: 0; max-height: 260px; overflow-y: auto;
@@ -50,6 +51,14 @@
            color: var(--accent-text); cursor: pointer; text-decoration: none; display: inline-block; }
     .messages { list-style: none; padding: 0; }
     .messages li { background: var(--fotball); padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; }
+    .messages li.warning, .messages li.error, .warn { background: var(--handball); }
+    .warn { padding: 8px 12px; border-radius: 8px; margin: 8px 0; }
+    .status { font-size: .8rem; padding: 2px 8px; border-radius: 99px; background: var(--anna); white-space: nowrap; }
+    .status-approved { background: var(--fotball); } .status-proposed, .status-pending { background: var(--volleyball); }
+    .status-rejected, .status-declined { background: var(--handball); }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .btn.secondary { background: var(--surface); color: var(--text); border: 1px solid var(--line); }
     .muted { color: var(--muted); }
     table.list { width: 100%; border-collapse: collapse; }
     table.list td, table.list th { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
@@ -62,7 +71,10 @@
     {% if static_export %}
     {% elif user.is_authenticated %}
       <a href="{% url 'mine' %}">Mine lag</a>
-      {% if user.is_staff %}<a href="{% url 'invite' %}">Inviter</a><a href="/admin/">Administrer</a>{% endif %}
+      {% if user.is_staff %}
+        <a href="{% url 'request_admin' %}">Søknader{% if pending_request_count %} ({{ pending_request_count }}){% endif %}</a>
+        <a href="{% url 'invite' %}">Inviter</a><a href="/admin/">Administrer</a>
+      {% endif %}
       <form method="post" action="{% url 'logout' %}" style="margin:0">{% csrf_token %}
         <button type="submit" class="linklike">Logg ut</button>
       </form>
@@ -78,7 +90,7 @@
   </nav>
   {% endif %}
   <main>
-    {% if messages %}<ul class="messages">{% for m in messages %}<li>{{ m }}</li>{% endfor %}</ul>{% endif %}
+    {% if messages %}<ul class="messages">{% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}</ul>{% endif %}
     {% block content %}{% endblock %}
   </main>
 </body>

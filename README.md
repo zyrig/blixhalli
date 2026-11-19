@@ -3,8 +3,10 @@
 Ein nettapp for å setje opp og vise treningstidene i Blixhalli, og seinare på fotballbanane ute.
 Han fungerer i nettlesaren på både PC og mobil.
 
-- **Fleire anlegg:** kvart anlegg (hall eller bane ute) har eiga inndeling, t.d. «1/3, 2/3, 3/3» eller
-  «A, B», sine eigne sesongar og si eiga adresse (`/blixhalli/`, `/kunstgras/`). Laga og lagleiarane er felles.
+- **Fleire anlegg** med faner øvst: Blixhalli, Kunstgras 11'ar, Kunstgras 7'ar og Grasbane (sjå `data/anlegg.json`).
+  Kvart anlegg har eiga inndeling og eigne reglar for kva som kan bookast, t.d. 1/4 eller 1/2 bane.
+- **Søknad om fast tid:** lagleiaren vel anlegg, lag, vekedag, klokkeslett, kor stor del, og start- og sluttdato.
+  Administrator godkjenner, avslår eller føreslår ei anna tid på `/soknader/`, og laget kan godta forslaget med eitt trykk.
 
 - **Vekevising** (framsida) for ei bestemt veke: faste tider, avlysingar og enkelttider.
 - **Avlysingar:** ei fast tid kan avlysast ein dato, og plassen blir ledig for andre.
@@ -21,11 +23,23 @@ Han fungerer i nettlesaren på både PC og mobil.
 Laga med [Django](https://www.djangoproject.com/) (Python). Data blir lagra i
 SQLite, ein database som ligg i éi fil og ikkje treng noko oppsett.
 
-## Leggje til eit nytt anlegg
+## Anlegg og kva som kan bookast
 
-I admin: **Anlegg → Legg til**. Vel namn, type (hall eller bane ute) og delane, skilde med komma,
-frå venstre mot høgre, t.d. `A,B` for ei bane delt i to eller `1,2,3,4` for fire 5er-banar.
-Legg så til ein sesong for anlegget (t.d. april–oktober for ei bane ute), og treningstidene.
+Anlegga i `data/anlegg.json` blir oppretta automatisk (`python manage.py ensure_facilities`, køyrer ved kvar deploy).
+Endringar gjer du i admin under **Anlegg**. Dei blir aldri overskrivne.
+
+- **Delar:** namna på delane, skilde med komma, frå venstre mot høgre, t.d. `A,B,C,D`.
+- **Kva som kan bookast:** éi linje per storleik. Døme for Kunstgras 11'ar:
+  ```
+  1/1: A-D
+  1/2: A-B, C-D
+  1/4: A, B, C, D
+  ```
+  Fjern linja `1/1: A-D` viss heile bana ikkje skal kunne bookast. Tomt felt = alle delar som ligg ved sida av
+  kvarandre kan bookast (slik Blixhalli fungerer).
+
+Sesongar er valfrie. Ei fast tid har eit anlegg og ein periode (gjeld frå/til). Sesongar blir berre brukte for
+importerte sesongplanar frå Excel.
 
 ## Brukarar og roller
 

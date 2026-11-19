@@ -2,7 +2,7 @@
 from django.contrib import admin, messages
 
 from . import accounts
-from .models import AccountRequest, Booking, Cancellation, Facility, Group, Season, TrainingSlot
+from .models import AccountRequest, Booking, Cancellation, Facility, Group, Season, TrainingRequest, TrainingSlot
 
 admin.site.site_header = "Blixhalli – administrasjon"
 admin.site.site_title = "Blixhalli"
@@ -11,7 +11,7 @@ admin.site.site_url = "/"
 
 @admin.register(Facility)
 class FacilityAdmin(admin.ModelAdmin):
-    list_display = ["name", "kind", "section_labels", "slug", "order"]
+    list_display = ["name", "kind", "section_labels", "units", "slug", "order"]
     prepopulated_fields = {"slug": ["name"]}
 
 
@@ -39,8 +39,10 @@ class GroupAdmin(admin.ModelAdmin):
 @admin.register(TrainingSlot)
 class TrainingSlotAdmin(admin.ModelAdmin):
     list_display = ["group", "weekday", "start_time", "end_time", "sections_label", "tentative", "season"]
-    list_filter = ["season__facility", "season", "weekday", "tentative", "group__category"]
-    list_select_related = ["group", "season__facility"]
+    list_display = ["group", "facility", "weekday", "start_time", "end_time", "sections_label", "valid_from",
+                    "valid_to", "season"]
+    list_filter = ["facility", "season", "weekday", "tentative", "group__category"]
+    list_select_related = ["group", "facility", "season"]
     search_fields = ["group__name", "note"]
     autocomplete_fields = ["group"]
 
@@ -96,4 +98,14 @@ class BookingAdmin(admin.ModelAdmin):
     list_display = ["group", "facility", "date", "start_time", "end_time", "sections_label", "status", "note", "created_by"]
     list_filter = ["facility", "status", "group__category"]
     date_hierarchy = "date"
+    autocomplete_fields = ["group"]
+
+
+@admin.register(TrainingRequest)
+class TrainingRequestAdmin(admin.ModelAdmin):
+    """Søknader blir handsama på /soknader/. Her kan ein sjå og rette alle."""
+    list_display = ["group", "facility", "weekday", "start_time", "end_time", "valid_from", "valid_to", "status",
+                    "created_at"]
+    list_filter = ["status", "facility"]
+    search_fields = ["group__name", "message"]
     autocomplete_fields = ["group"]

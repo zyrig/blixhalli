@@ -22,7 +22,7 @@ def _require_manage(user, group):
 
 @login_required
 def cancel_slot(request, slot_id):
-    slot = get_object_or_404(TrainingSlot.objects.select_related("group", "season__facility"), pk=slot_id)
+    slot = get_object_or_404(TrainingSlot.objects.select_related("group", "facility", "season"), pk=slot_id)
     _require_manage(request.user, slot.group)
     form = CancellationForm(request.POST or None, slot=slot, initial={"date": request.GET.get("dato")})
     if request.method == "POST" and form.is_valid():
@@ -82,7 +82,7 @@ def upcoming_for(groups):
     today = timezone.localdate()
     return {
         "cancellations": Cancellation.objects.filter(slot__group__in=groups, date__gte=today)
-                         .select_related("slot__group", "slot__season__facility"),
+                         .select_related("slot__group", "slot__facility"),
         "bookings": Booking.objects.filter(group__in=groups, date__gte=today).select_related("group", "facility"),
         "facilities": Facility.objects.all(),
     }

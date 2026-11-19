@@ -1,7 +1,7 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
 
-from . import account_views, leader_views, views
+from . import account_views, leader_views, request_views, views
 from .forms import EmailLoginForm, ResetPasswordForm
 
 urlpatterns = [
@@ -11,6 +11,13 @@ urlpatterns = [
     path("avlys/<int:slot_id>/", leader_views.cancel_slot, name="cancel_slot"),
     path("avlysing/<int:pk>/angre/", leader_views.undo_cancellation, name="undo_cancellation"),
     path("enkelttid/<int:pk>/slett/", leader_views.delete_booking, name="delete_booking"),
+    # Søknader om faste tider
+    path("soknad/<int:pk>/trekk/", request_views.withdraw, name="withdraw_request"),
+    path("soknad/<int:pk>/svar/", request_views.answer_proposal, name="answer_proposal"),
+    path("soknader/", request_views.request_admin, name="request_admin"),
+    path("soknader/<int:pk>/godkjenn/", request_views.approve, name="approve_request"),
+    path("soknader/<int:pk>/avsla/", request_views.reject, name="reject_request"),
+    path("soknader/<int:pk>/foresla/", request_views.propose, name="propose_request"),
     # Brukarar
     path("be-om-brukar/", account_views.request_account, name="request_account"),
     path("inviter/", account_views.invite, name="invite"),
@@ -27,4 +34,5 @@ urlpatterns = [
     path("<slug:facility>/sesong/", views.season_view, name="season_default"),
     path("<slug:facility>/sesong/<int:season_id>/", views.season_view, name="season"),
     path("<slug:facility>/enkelttid/ny/", leader_views.new_booking, name="new_booking"),
+    path("<slug:facility>/sok/", request_views.new_request, name="new_request"),
 ]
