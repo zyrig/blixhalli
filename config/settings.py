@@ -23,18 +23,33 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
+# Køyrer appen hos ein vertsteneste (Vercel eller Render)? Då er standarden drift, ikkje utvikling.
+HOSTED = bool(os.environ.get("VERCEL") or os.environ.get("RENDER"))
+
 SECRET_KEY = os.environ.get(
     "DJANGO_SECRET_KEY", "django-insecure-berre-for-utvikling-byt-ut-i-produksjon"
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
+DEBUG = os.environ.get("DJANGO_DEBUG", "0" if HOSTED else "1") == "1"
+
+if HOSTED and SECRET_KEY.startswith("django-insecure"):
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured("Set miljøvariabelen DJANGO_SECRET_KEY til ein lang, tilfeldig tekst.")
 
 ALLOWED_HOSTS = [h for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h]
 # Render set denne automatisk til adressa til appen, t.d. treningstider.onrender.com
 if os.environ.get("RENDER_EXTERNAL_HOSTNAME"):
     ALLOWED_HOSTS.append(os.environ["RENDER_EXTERNAL_HOSTNAME"])
-CSRF_TRUSTED_ORIGINS = [f"https://{h.lstrip('.')}" for h in ALLOWED_HOSTS if h not in ("localhost", "127.0.0.1", "*")]
+# Underadresser per område, t.d. vik.treningstider.no (set BASE_DOMAIN=treningstider.no)
+if os.environ.get("BASE_DOMAIN"):
+    ALLOWED_HOSTS.append("." + os.environ["BASE_DOMAIN"].strip("."))
+# Vercel set VERCEL=1 og VERCEL_URL (adressa til kvar utrulling)
+if os.environ.get("VERCEL"):
+    ALLOWED_HOSTS.append(".vercel.app")
+# «.vercel.app» i ALLOWED_HOSTS tyder alle underadresser; for CSRF blir det «https://*.vercel.app»
+CSRF_TRUSTED_ORIGINS = [f"https://*{h}" if h.startswith(".") else f"https://{h}"
+                        for h in ALLOWED_HOSTS if h not in ("localhost", "127.0.0.1", "*")]
 
 
 # Application definition
@@ -56,6 +71,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "bookings.middleware.WorkspaceMiddleware",  # finn området (t.d. Vik) ut frå adressa
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -86,10 +102,13 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 # Lokalt: SQLite-fil. I drift: set DATABASE_URL, t.d. til Supabase sin «Session pooler»-adresse:
 # postgresql://postgres.<prosjekt>:<passord>@aws-0-eu-central-1.pooler.supabase.com:5432/postgres
+if HOSTED and not os.environ.get("DATABASE_URL"):
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured("Set miljøvariabelen DATABASE_URL til adressa frå Supabase (Session pooler).")
 DATABASES = {
     "default": dj_database_url.config(
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-        conn_max_age=600,
+        conn_max_age=60 if os.environ.get("VERCEL") else 600,
         conn_health_checks=True,
     )
 }
@@ -135,7 +154,11 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+    # I drift: komprimerte filer med versjonsnummer. Lokalt og i testar: vanlege filer.
+    # Vercel serverer statiske filer frå sitt eige CDN, så der trengst ikkje versjonerte filnamn.
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"
+                    if DEBUG or os.environ.get("VERCEL")
+                    else "whitenoise.storage.CompressedManifestStaticFilesStorage"},
 }
 
 # Tryggleik i drift (når DJANGO_DEBUG=0)

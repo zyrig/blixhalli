@@ -11,6 +11,8 @@ from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
+from django.db.models import Q
+
 from .models import AccountRequest
 
 User = get_user_model()
@@ -81,9 +83,34 @@ def reject(account_request, by, comment=""):
     )
 
 
+def visible_account_requests(user, workspace):
+    """Førespurnader om brukar ein administrator skal handsame: dei som gjeld lag i organisasjonane
+    hans, og dei som har skrive inn eit lag som ikkje finst («anna lag»)."""
+    qs = AccountRequest.objects.filter(workspace=workspace)
+    if user.is_superuser:
+        return qs
+    return qs.filter(Q(groups__organization__admins=user) | Q(other_group__gt="")).distinct()
+
+
+def visible_account_requests_any(user):
+    """Som visible_account_requests, men for alle områda brukaren administrerer (brukt i admin)."""
+    from .models import Workspace
+    from .permissions import admin_orgs
+    workspaces = Workspace.objects.filter(organizations__in=admin_orgs(user)).distinct()
+    qs = AccountRequest.objects.filter(workspace__in=workspaces)
+    if user.is_superuser:
+        return AccountRequest.objects.all()
+    return qs.filter(Q(groups__organization__admins=user) | Q(other_group__gt="")).distinct()
+
+
 def notify_admins_of_request(account_request, request):
-    """Send e-post til alle administratorar med e-postadresse."""
-    recipients = list(User.objects.filter(is_staff=True, is_active=True).exclude(email="").values_list("email", flat=True))
+    """Send e-post til administratorane for laga det gjeld (eller alle i området ved «anna lag»)."""
+    from .models import Organization
+    from .notify import admin_emails
+    orgs = Organization.objects.filter(groups__in=account_request.groups.all()).distinct()
+    if account_request.other_group or not orgs.exists():
+        orgs = Organization.objects.filter(workspace=account_request.workspace)
+    recipients = admin_emails(orgs)
     if not recipients:
         return
     link = request.build_absolute_uri(reverse("admin:bookings_accountrequest_change", args=[account_request.pk]))

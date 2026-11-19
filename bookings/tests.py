@@ -116,7 +116,8 @@ class PageTests(TestCase):
         self.assertEqual(self.client.get(f"/blixhalli/sesong/{self.draft.pk}/").status_code, 404)
 
     def test_draft_visible_to_staff(self):
-        User.objects.create_user("admin", password="x", is_staff=True)
+        admin = User.objects.create_user("admin", password="x")
+        self.draft.facility.manager.admins.add(admin)
         self.client.login(username="admin", password="x")
         self.assertContains(self.client.get(f"/blixhalli/sesong/{self.draft.pk}/"), "Utkast")
 
@@ -315,7 +316,8 @@ class LeaderPermissionAndWeekTests(TestCase):
         self.assertTrue(Booking.objects.filter(pk=b.pk).exists())
 
     def test_admin_can_manage_all_teams(self):
-        admin = User.objects.create_user("a@example.com", "a@example.com", "pw", is_staff=True)
+        admin = User.objects.create_user("a@example.com", "a@example.com", "pw")
+        self.j12_slot.facility.owner.admins.add(admin)  # eigaren av anlegget (t.d. kommunen) kan overstyre
         self.client.force_login(admin)
         r = self.client.post(f"/avlys/{self.g8_slot.pk}/", {"date": self.monday.isoformat()})
         self.assertEqual(r.status_code, 302)
@@ -437,7 +439,9 @@ class UnitsAndRequestsTests(TestCase):
         self.j14 = Group.objects.create(name="Fotball J14", category="fotball")
         self.kari = User.objects.create_user("kari@example.com", "kari@example.com", "pw", first_name="Kari")
         self.g12.leaders.add(self.kari)
-        self.admin = User.objects.create_user("admin@example.com", "admin@example.com", "pw", is_staff=True)
+        self.admin = User.objects.create_user("admin@example.com", "admin@example.com", "pw")
+        from .models import Organization
+        Organization.objects.get(slug="vikil").admins.add(self.admin)  # Vik IL fordeler tida på banane
         today = timezone.localdate()
         self.monday = today + datetime.timedelta(days=7 - today.weekday())
         self.end = self.monday + datetime.timedelta(days=60)
@@ -607,3 +611,186 @@ class UnitsAndRequestsTests(TestCase):
         self.assertEqual(Facility.objects.count(), 4)
         self.f11.refresh_from_db()
         self.assertEqual(self.f11.units, "1/2: A-B, C-D")
+
+
+class OrganizationTests(TestCase):
+    """Fleire organisasjonar: kommunen eig anlegga og fordeler hallen, Vik IL fordeler banane og
+    fordeler vidare blokker dei har fått i hallen. Andre organisasjonar (t.d. Vik fengsel) må godkjennast av
+    den som fordeler tida på anlegget."""
+
+    def setUp(self):
+        from django.utils import timezone
+        from .models import Facility, Organization
+        call_command("ensure_facilities", stdout=open("/dev/null", "w"))
+        self.kommune = Organization.objects.get(slug="vik-kommune")
+        self.vikil = Organization.objects.get(slug="vikil")
+        self.fengsel = Organization.objects.create(workspace=self.vikil.workspace, name="Vik fengsel",
+                                                   slug="vik-fengsel", kind="anna")
+        self.hall = Facility.objects.get(slug="blixhalli")
+        self.f11 = Facility.objects.get(slug="kunstgras-11")
+        self.g12 = Group.objects.create(organization=self.vikil, name="Fotball G12", category="fotball")
+        self.fengsel_group = Group.objects.create(organization=self.fengsel, name="Vik fengsel")
+        mk = lambda name: User.objects.create_user(f"{name}@example.com", f"{name}@example.com", "pw")  # noqa: E731
+        self.kommune_admin, self.vikil_admin, self.leader, self.fengsel_leader = (
+            mk("kommune"), mk("vikil"), mk("leiar"), mk("fengsel"))
+        self.kommune.admins.add(self.kommune_admin)
+        self.vikil.admins.add(self.vikil_admin)
+        self.g12.leaders.add(self.leader)
+        self.fengsel_group.leaders.add(self.fengsel_leader)
+        today = timezone.localdate()
+        self.monday = today + datetime.timedelta(days=7 - today.weekday())
+        self.end = self.monday + datetime.timedelta(days=60)
+
+    def allocate_vikil_monday(self):
+        from .models import Allocation
+        a = Allocation(facility=self.hall, organization=self.vikil, weekday=0, start_time=t(17), end_time=t(21),
+                       first_section=1, last_section=3)
+        a.full_clean()
+        a.save()
+        return a
+
+    def request(self, user, facility, group, start=18, end=19, unit="1-3"):
+        self.client.force_login(user)
+        self.client.post(f"/{facility.slug}/sok/", {
+            "group": group.pk, "weekday": 0, "start_time": f"{start}:00", "end_time": f"{end}:00", "unit": unit,
+            "valid_from": self.monday.isoformat(), "valid_to": self.end.isoformat()})
+        from .models import TrainingRequest
+        return TrainingRequest.objects.latest("pk")
+
+    def book(self, user, facility, group, start=18, end=19, unit="1-1"):
+        self.client.force_login(user)
+        self.client.post(f"/{facility.slug}/enkelttid/ny/", {
+            "group": group.pk, "date": self.monday.isoformat(), "start_time": f"{start}:00",
+            "end_time": f"{end}:00", "unit": unit})
+        from .models import Booking
+        return Booking.objects.latest("pk")
+
+    # --- godkjenning hos rett organisasjon ---
+
+    def test_hall_request_outside_allocation_goes_to_kommune(self):
+        r = self.request(self.leader, self.hall, self.g12)
+        from .permissions import can_approve_request
+        self.assertFalse(can_approve_request(self.vikil_admin, r))
+        self.assertTrue(can_approve_request(self.kommune_admin, r))
+        self.client.force_login(self.vikil_admin)
+        self.assertEqual(self.client.post(f"/soknader/{r.pk}/godkjenn/").status_code, 403)
+        self.assertNotContains(self.client.get("/soknader/"), "Fotball G12")
+        self.client.force_login(self.kommune_admin)
+        self.client.post(f"/soknader/{r.pk}/godkjenn/")
+        r.refresh_from_db()
+        self.assertEqual(r.status, "approved")
+
+    def test_vikil_admin_distributes_own_block(self):
+        self.allocate_vikil_monday()
+        r = self.request(self.leader, self.hall, self.g12)
+        self.client.force_login(self.vikil_admin)
+        self.assertContains(self.client.get("/soknader/"), "Fotball G12")
+        self.client.post(f"/soknader/{r.pk}/godkjenn/")
+        r.refresh_from_db()
+        self.assertEqual(r.status, "approved")
+
+    def test_other_organization_cannot_get_time_in_vikil_block(self):
+        self.allocate_vikil_monday()
+        r = self.request(self.fengsel_leader, self.hall, self.fengsel_group)
+        self.assertIsNotNone(r.find_clash())  # blokka er Vik IL sin
+        from .permissions import can_approve_request
+        self.assertFalse(can_approve_request(self.vikil_admin, r))
+        self.assertTrue(can_approve_request(self.kommune_admin, r))
+
+    def test_allocation_cannot_overlap_another_organizations_time(self):
+        self.allocate_vikil_monday()
+        from .models import Allocation
+        with self.assertRaises(ValidationError):
+            Allocation(facility=self.hall, organization=self.fengsel, weekday=0, start_time=t(20), end_time=t(22),
+                       first_section=1, last_section=1).full_clean()
+        # Vik IL sine eigne lag kan trene inne i blokka
+        TrainingSlot(facility=self.hall, group=self.g12, weekday=0, start_time=t(18), end_time=t(19),
+                     first_section=1, last_section=3).full_clean()
+
+    # --- enkelttider ---
+
+    def test_booking_inside_own_block_is_approved_at_once(self):
+        self.allocate_vikil_monday()
+        self.assertEqual(self.book(self.leader, self.hall, self.g12, unit="1-3").status, "approved")
+
+    def test_booking_outside_block_waits_for_kommune(self):
+        b = self.book(self.leader, self.hall, self.g12, start=10, end=11, unit="1-3")
+        self.assertEqual(b.status, "pending")
+        self.client.force_login(self.vikil_admin)
+        self.assertEqual(self.client.post(f"/soknader/enkelttid/{b.pk}/", {"answer": "approve"}).status_code, 403)
+        self.client.force_login(self.kommune_admin)
+        self.client.post(f"/soknader/enkelttid/{b.pk}/", {"answer": "approve"})
+        b.refresh_from_db()
+        self.assertEqual(b.status, "approved")
+
+    def test_pitch_bookings(self):
+        # Vik IL fordeler banane: eige lag får tida med ein gong, andre må godkjennast av Vik IL
+        self.assertEqual(self.book(self.leader, self.f11, self.g12).status, "approved")
+        b = self.book(self.fengsel_leader, self.f11, self.fengsel_group, start=20, end=21)
+        self.assertEqual(b.status, "pending")
+        self.client.force_login(self.vikil_admin)
+        self.client.post(f"/soknader/enkelttid/{b.pk}/", {"answer": "approve"})
+        b.refresh_from_db()
+        self.assertEqual(b.status, "approved")
+
+    def test_kommune_can_override_on_pitches(self):
+        slot = TrainingSlot.objects.create(facility=self.f11, group=self.g12, weekday=0, start_time=t(17),
+                                           end_time=t(18), first_section=1, last_section=4)
+        self.client.force_login(self.fengsel_leader)
+        self.assertEqual(self.client.get(f"/avlys/{slot.pk}/").status_code, 403)
+        self.client.force_login(self.kommune_admin)  # eigar av bana
+        r = self.client.post(f"/avlys/{slot.pk}/", {"date": self.monday.isoformat(), "reason": "Kommunalt arr."})
+        self.assertEqual(r.status_code, 302)
+
+    # --- admin ---
+
+    def test_org_admins_get_scoped_admin_access(self):
+        self.vikil_admin.refresh_from_db()
+        self.assertTrue(self.vikil_admin.is_staff)
+        self.client.force_login(self.vikil_admin)
+        r = self.client.get("/admin/bookings/group/")
+        self.assertContains(r, "Fotball G12")
+        self.assertNotContains(r, "Vik fengsel</a>")
+        self.assertNotEqual(self.client.get(f"/admin/bookings/group/{self.fengsel_group.pk}/change/").status_code, 200)
+        # Kommunen ser hallen den fordeler, Vik IL ser banane
+        self.assertNotContains(self.client.get("/admin/bookings/facility/"), "Blixhalli")
+        self.client.force_login(User.objects.get(pk=self.kommune_admin.pk))
+        self.assertContains(self.client.get("/admin/bookings/facility/"), "Blixhalli")
+
+    # --- område ---
+
+    def test_workspace_from_host(self):
+        import os
+        from unittest import mock
+        from django.test import override_settings
+        from .models import Facility, Organization, Workspace
+        other = Workspace.objects.create(name="Anna", slug="anna", domain="treningstider.annaklubb.no")
+        org = Organization.objects.create(workspace=other, name="Anna IL", slug="annail")
+        Facility.objects.create(workspace=other, owner=org, manager=org, name="Annahallen", slug="blixhalli")
+        with override_settings(ALLOWED_HOSTS=[".treningstider.no", "treningstider.annaklubb.no", "testserver"]), \
+                mock.patch.dict(os.environ, {"BASE_DOMAIN": "treningstider.no"}):
+            self.assertContains(self.client.get("/blixhalli/", HTTP_HOST="anna.treningstider.no"), "Annahallen")
+            self.assertContains(self.client.get("/blixhalli/", HTTP_HOST="treningstider.annaklubb.no"), "Annahallen")
+            r = self.client.get("/blixhalli/", HTTP_HOST="vik.treningstider.no")
+            self.assertContains(r, "Kunstgras 11")
+            self.assertNotContains(r, "Annahallen")
+
+    # --- Excel ---
+
+    def test_excel_export(self):
+        import io
+        import openpyxl
+        TrainingSlot.objects.create(facility=self.hall, group=self.g12, weekday=0, start_time=t(17),
+                                    end_time=t(18, 30), first_section=1, last_section=2)
+        r = self.client.get(f"/eksport/?dato={self.monday.isoformat()}")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("attachment", r["Content-Disposition"])
+        wb = openpyxl.load_workbook(io.BytesIO(r.content))
+        self.assertEqual(wb.sheetnames[:2], ["Liste", "Blixhalli"])
+        ws = wb["Blixhalli"]
+        cells = {c.value: c.coordinate for row in ws.iter_rows() for c in row if c.value}
+        self.assertIn("Fotball G12 (Vik IL)", cells)
+        merged = [str(m) for m in ws.merged_cells.ranges if str(m).startswith(cells["Fotball G12 (Vik IL)"])]
+        self.assertTrue(merged)  # samanslått over 1/3–2/3 og tre halvtimar
+        rows = [[c.value for c in row] for row in wb["Liste"].iter_rows(min_row=4)]
+        self.assertIn(["Blixhalli", "Måndag", "17:00", "18:30", "1/3–2/3", "Fotball G12", "Vik IL", None, None], rows)

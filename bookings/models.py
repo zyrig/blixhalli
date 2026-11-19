@@ -21,12 +21,79 @@ WEEKDAYS = [
 ]
 
 RESERVED_SLUGS = {"admin", "mine", "inviter", "be-om-brukar", "logg-inn", "logg-ut", "passord", "avlys",
-                  "avlysing", "enkelttid", "static", "veke", "sesong", "soknader", "soknad", "sok"}
+                  "avlysing", "enkelttid", "static", "veke", "sesong", "soknader", "soknad", "sok", "eksport"}
 
 
 def validate_facility_slug(value):
     if value in RESERVED_SLUGS:
         raise ValidationError(f"«{value}» er reservert. Vel eit anna namn i adressa.")
+
+
+class Workspace(models.Model):
+    """Eit område med eigne anlegg og organisasjonar, t.d. «Vik». Seinare: vik.treningstider.no."""
+
+    name = models.CharField("namn", max_length=100)
+    slug = models.SlugField("kortnamn", unique=True, help_text="Brukt i adressa, t.d. «vik» → vik.treningstider.no.")
+    domain = models.CharField("eige domene", max_length=200, blank=True,
+                              help_text="Valfritt, t.d. treningstider.vikil.no. Må òg leggjast til hos Vercel.")
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name = "område"
+        verbose_name_plural = "område"
+
+    def __str__(self):
+        return self.name
+
+
+def default_workspace():
+    """Området som blir brukt når ingenting anna er valt (det første, eller «Vik»)."""
+    workspace = Workspace.objects.first()
+    if workspace is None:
+        workspace = Workspace.objects.create(name="Vik", slug="vik")
+    return workspace
+
+
+class Organization(models.Model):
+    """Ein organisasjon i området: kommunen, eit idrettslag eller ein annan leigetakar (t.d. Vik fengsel)."""
+
+    KOMMUNE, IDRETTSLAG, ANNA = "kommune", "idrettslag", "anna"
+    KINDS = [(KOMMUNE, "Kommune"), (IDRETTSLAG, "Idrettslag"), (ANNA, "Anna organisasjon")]
+
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name="organizations",
+                                  verbose_name="område")
+    name = models.CharField("namn", max_length=150)
+    slug = models.SlugField("kortnamn")
+    kind = models.CharField("type", max_length=12, choices=KINDS, default=IDRETTSLAG)
+    admins = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name="admin_of",
+                                    verbose_name="administratorar",
+                                    help_text="Kan godkjenne søknader og administrere organisasjonen sine lag og anlegg.")
+    contact_email = models.EmailField("e-post", blank=True)
+
+    class Meta:
+        ordering = ["workspace", "kind", "name"]
+        constraints = [models.UniqueConstraint(fields=["workspace", "slug"], name="unique_org_slug_per_workspace")]
+        verbose_name = "organisasjon"
+        verbose_name_plural = "organisasjonar"
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if self.workspace_id is None:
+            self.workspace = default_workspace()
+        super().save(*args, **kwargs)
+
+
+def default_organization(workspace=None):
+    """Organisasjonen som blir brukt når ingenting anna er valt: første idrettslag, eller «Vik IL»."""
+    workspace = workspace or default_workspace()
+    orgs = Organization.objects.filter(workspace=workspace)
+    org = orgs.filter(kind=Organization.IDRETTSLAG).first() or orgs.first()
+    if org is None:
+        org = Organization.objects.create(workspace=workspace, name="Vik IL", slug="vikil",
+                                          kind=Organization.IDRETTSLAG)
+    return org
 
 
 class Facility(models.Model):
@@ -35,8 +102,16 @@ class Facility(models.Model):
     HALL, PITCH = "hall", "bane"
     KINDS = [(HALL, "Hall"), (PITCH, "Bane ute")]
 
-    name = models.CharField("namn", max_length=100, unique=True)
-    slug = models.SlugField("adresse", unique=True, validators=[validate_facility_slug],
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name="facilities",
+                                  verbose_name="område")
+    owner = models.ForeignKey(Organization, on_delete=models.PROTECT, related_name="owned_facilities",
+                              verbose_name="eigar", help_text="Eigaren sine administratorar kan overstyre alt på anlegget.")
+    manager = models.ForeignKey(Organization, on_delete=models.PROTECT, related_name="managed_facilities",
+                                verbose_name="fordeler tid",
+                                help_text="Organisasjonen som tildeler tid på anlegget, t.d. kommunen for hallen "
+                                          "eller idrettslaget for banane.")
+    name = models.CharField("namn", max_length=100)
+    slug = models.SlugField("adresse", validators=[validate_facility_slug],
                             help_text="Brukt i nettadressa, t.d. «blixhalli» → /blixhalli/.")
     kind = models.CharField("type", max_length=10, choices=KINDS, default=HALL)
     section_labels = models.CharField(
@@ -55,11 +130,21 @@ class Facility(models.Model):
 
     class Meta:
         ordering = ["order", "name"]
+        constraints = [models.UniqueConstraint(fields=["workspace", "slug"], name="unique_facility_slug_per_workspace")]
         verbose_name = "anlegg"
         verbose_name_plural = "anlegg"
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if self.workspace_id is None:
+            self.workspace = (self.manager.workspace if self.manager_id else default_workspace())
+        if self.manager_id is None:
+            self.manager = self.owner if self.owner_id else default_organization(self.workspace)
+        if self.owner_id is None:
+            self.owner = self.manager
+        super().save(*args, **kwargs)
 
     @property
     def labels(self):
@@ -234,7 +319,9 @@ class Group(models.Model):
         ("anna", "Anna"),
     ]
 
-    name = models.CharField("namn", max_length=200, unique=True)
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="groups",
+                                     verbose_name="organisasjon")
+    name = models.CharField("namn", max_length=200)
     category = models.CharField("kategori", max_length=20, choices=CATEGORIES, default="anna")
     contact = models.CharField("kontaktperson", max_length=200, blank=True)
     leaders = models.ManyToManyField(
@@ -244,11 +331,17 @@ class Group(models.Model):
 
     class Meta:
         ordering = ["name"]
-        verbose_name = "gruppe"
-        verbose_name_plural = "grupper"
+        constraints = [models.UniqueConstraint(fields=["organization", "name"], name="unique_group_name_per_org")]
+        verbose_name = "lag"
+        verbose_name_plural = "lag"
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if self.organization_id is None:
+            self.organization = default_organization()
+        super().save(*args, **kwargs)
 
     @staticmethod
     def guess_category(name):
@@ -332,8 +425,10 @@ class TrainingSlot(models.Model):
         if not (self.facility_id and self.start_time and self.end_time and self.weekday is not None):
             return None
         start, end = self.effective_range()
+        org = self.group.organization if self.group_id else None
         return find_recurring_clash(self.facility, self.weekday, self.start_time, self.end_time,
-                                    self.first_section, self.last_section, start, end, exclude_slot=self.pk)
+                                    self.first_section, self.last_section, start, end, exclude_slot=self.pk,
+                                    organization=org)
 
 
 class AccountRequest(models.Model):
@@ -342,6 +437,8 @@ class AccountRequest(models.Model):
     PENDING, APPROVED, REJECTED = "pending", "approved", "rejected"
     STATUSES = [(PENDING, "Ventar"), (APPROVED, "Godkjend"), (REJECTED, "Avslått")]
 
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name="account_requests",
+                                  verbose_name="område")
     name = models.CharField("namn", max_length=200)
     email = models.EmailField("e-post")
     phone = models.CharField("telefon", max_length=30, blank=True)
@@ -371,6 +468,11 @@ class AccountRequest(models.Model):
     def __str__(self):
         return f"{self.name} <{self.email}>"
 
+    def save(self, *args, **kwargs):
+        if self.workspace_id is None:
+            self.workspace = default_workspace()
+        super().save(*args, **kwargs)
+
 
 def overlapping(queryset, start_time, end_time, first_section, last_section):
     """Avgrens til tider som overlappar i klokkeslett og del av salen."""
@@ -380,10 +482,12 @@ def overlapping(queryset, start_time, end_time, first_section, last_section):
     )
 
 
-def find_clash_on_date(facility, date, start_time, end_time, first_section, last_section, exclude_booking=None):
+def find_clash_on_date(facility, date, start_time, end_time, first_section, last_section, exclude_booking=None,
+                       organization=None):
     """Finn kva som eventuelt opptek denne delen av anlegget på denne datoen.
 
-    Ser på faste tider (som ikkje er avlyste den dagen) og enkelttider.
+    Ser på faste tider (som ikkje er avlyste den dagen), enkelttider, og blokker som er tildelte
+    andre organisasjonar enn `organization`.
     """
     slots = overlapping(TrainingSlot.objects.filter(facility=facility, weekday=date.weekday()),
                         start_time, end_time, first_section, last_section).select_related("season", "facility", "group")
@@ -395,21 +499,37 @@ def find_clash_on_date(facility, date, start_time, end_time, first_section, last
                            start_time, end_time, first_section, last_section)
     if exclude_booking:
         bookings = bookings.exclude(pk=exclude_booking)
-    return bookings.select_related("group").first()
+    booking = bookings.select_related("group", "facility").first()
+    if booking:
+        return booking
+    if organization is not None:
+        return other_org_allocation(facility, organization, date.weekday(), start_time, end_time,
+                                    first_section, last_section, date, date)
+    return None
 
 
 def find_recurring_clash(facility, weekday, start_time, end_time, first_section, last_section,
-                         date_from, date_to, exclude_slot=None):
-    """Finn faste tider eller enkelttider som kolliderer med ei fast tid i perioden date_from–date_to."""
+                         date_from, date_to, exclude_slot=None, organization=None, for_allocation=False,
+                         exclude_allocation=None):
+    """Finn noko som kolliderer med ei fast tid (eller ei tildelt blokk) i perioden date_from–date_to.
+
+    - Faste tider og enkelttider kolliderer alltid. For ei blokk (for_allocation) gjeld det berre
+      tider til andre organisasjonar, sidan organisasjonen sine eigne lag skal trene inne i blokka.
+    - Blokker tildelte andre organisasjonar enn `organization` kolliderer.
+    """
     slots = overlapping(TrainingSlot.objects.filter(facility=facility, weekday=weekday),
                         start_time, end_time, first_section, last_section).select_related("season", "group", "facility")
     if exclude_slot:
         slots = slots.exclude(pk=exclude_slot)
+    if for_allocation and organization is not None:
+        slots = slots.exclude(group__organization=organization)
     for other in slots:
         if ranges_overlap(date_from, date_to, *other.effective_range()):
             return other
     bookings = overlapping(Booking.objects.filter(facility=facility, status__in=Booking.BLOCKING),
                            start_time, end_time, first_section, last_section).select_related("group", "facility")
+    if for_allocation and organization is not None:
+        bookings = bookings.exclude(group__organization=organization)
     if date_from:
         bookings = bookings.filter(date__gte=date_from)
     if date_to:
@@ -417,6 +537,87 @@ def find_recurring_clash(facility, weekday, start_time, end_time, first_section,
     for b in bookings:
         if b.date.weekday() == weekday:
             return b
+    if organization is not None:
+        return other_org_allocation(facility, organization, weekday, start_time, end_time, first_section,
+                                    last_section, date_from, date_to, exclude=exclude_allocation)
+    return None
+
+
+def other_org_allocation(facility, organization, weekday, start_time, end_time, first_section, last_section,
+                         date_from, date_to, exclude=None):
+    """Ei blokk som er tildelt ein annan organisasjon og overlappar, om det finst."""
+    allocations = overlapping(Allocation.objects.filter(facility=facility, weekday=weekday),
+                              start_time, end_time, first_section, last_section).exclude(organization=organization)
+    if exclude:
+        allocations = allocations.exclude(pk=exclude)
+    for a in allocations.select_related("organization", "facility"):
+        if ranges_overlap(date_from, date_to, a.valid_from, a.valid_to):
+            return a
+    return None
+
+
+class Allocation(models.Model):
+    """Ei blokk som anlegget sin fordelar tildeler ein organisasjon, t.d. kommunen gir Vik IL
+    «måndag 17–21, heile salen». Organisasjonen fordeler så blokka vidare til laga sine."""
+
+    facility = models.ForeignKey(Facility, on_delete=models.CASCADE, related_name="allocations",
+                                 verbose_name="anlegg")
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="allocations",
+                                     verbose_name="tildelt")
+    weekday = models.IntegerField("vekedag", choices=WEEKDAYS)
+    start_time = models.TimeField("frå")
+    end_time = models.TimeField("til")
+    first_section = models.PositiveSmallIntegerField("frå del", default=1)
+    last_section = models.PositiveSmallIntegerField("til del", default=1)
+    valid_from = models.DateField("gjeld frå", null=True, blank=True)
+    valid_to = models.DateField("gjeld til", null=True, blank=True)
+    note = models.CharField("merknad", max_length=200, blank=True)
+
+    class Meta:
+        ordering = ["facility", "weekday", "start_time"]
+        verbose_name = "tildelt blokk"
+        verbose_name_plural = "tildelte blokker"
+
+    def __str__(self):
+        return (f"{self.organization}: {self.get_weekday_display()} {self.start_time:%H:%M}–{self.end_time:%H:%M}"
+                f" ({self.facility} {self.sections_label})")
+
+    @property
+    def sections_label(self):
+        return self.facility.sections_label(self.first_section, self.last_section)
+
+    def is_active_on(self, date):
+        return (date.weekday() == self.weekday and (self.valid_from is None or self.valid_from <= date)
+                and (self.valid_to is None or date <= self.valid_to))
+
+    def covers(self, weekday, start_time, end_time, first_section, last_section, date_from, date_to):
+        """Ligg heile tida inne i blokka?"""
+        return (weekday == self.weekday and self.start_time <= start_time and end_time <= self.end_time
+                and self.first_section <= first_section and last_section <= self.last_section
+                and (self.valid_from is None or (date_from is not None and self.valid_from <= date_from))
+                and (self.valid_to is None or (date_to is not None and date_to <= self.valid_to)))
+
+    def clean(self):
+        validate_period(self.start_time, self.end_time, self.valid_from, self.valid_to)
+        if self.facility_id:
+            if self.last_section and self.last_section > self.facility.section_count:
+                raise ValidationError(f"{self.facility} har berre {self.facility.section_count} delar.")
+            if self.first_section and self.last_section and self.last_section < self.first_section:
+                raise ValidationError("«Til del» kan ikkje vere før «frå del».")
+        if self.facility_id and self.organization_id and self.start_time and self.end_time:
+            clash = find_recurring_clash(self.facility, self.weekday, self.start_time, self.end_time,
+                                         self.first_section, self.last_section, self.valid_from, self.valid_to,
+                                         organization=self.organization, for_allocation=True,
+                                         exclude_allocation=self.pk)
+            if clash:
+                raise ValidationError(f"Kolliderer med: {clash}")
+
+
+def find_covering_allocation(organization, facility, weekday, start_time, end_time, first_section, last_section,
+                             date_from, date_to):
+    for a in Allocation.objects.filter(organization=organization, facility=facility, weekday=weekday):
+        if a.covers(weekday, start_time, end_time, first_section, last_section, date_from, date_to):
+            return a
     return None
 
 
@@ -495,7 +696,8 @@ class Booking(models.Model):
         validate_sections(self.facility if self.facility_id else None, self.first_section, self.last_section)
         if self.facility_id and self.date and self.start_time and self.end_time and self.status in self.BLOCKING:
             clash = find_clash_on_date(self.facility, self.date, self.start_time, self.end_time,
-                                       self.first_section, self.last_section, exclude_booking=self.pk)
+                                       self.first_section, self.last_section, exclude_booking=self.pk,
+                                       organization=self.group.organization if self.group_id else None)
             if clash:
                 raise ValidationError(f"Opptatt: {clash} ({clash.sections_label}).")
 
@@ -581,7 +783,8 @@ class TrainingRequest(models.Model):
     def find_clash(self, proposed=False):
         d = self.proposal() if proposed else self.wanted()
         return find_recurring_clash(self.facility, d["weekday"], d["start_time"], d["end_time"],
-                                    d["first_section"], d["last_section"], d["valid_from"], d["valid_to"])
+                                    d["first_section"], d["last_section"], d["valid_from"], d["valid_to"],
+                                    organization=self.group.organization)
 
     def build_slot(self, proposed=False):
         d = self.proposal() if proposed else self.wanted()

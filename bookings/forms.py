@@ -26,9 +26,17 @@ class ResetPasswordForm(PasswordResetForm):
 class GroupChoiceField(forms.ModelMultipleChoiceField):
     widget = forms.CheckboxSelectMultiple
 
+    def label_from_instance(self, obj):
+        return f"{obj.name} ({obj.organization})"
+
 
 class AccountRequestForm(forms.ModelForm):
-    groups = GroupChoiceField(Group.objects.all(), label="Kva lag er du trenar eller lagleiar for?", required=False)
+    groups = GroupChoiceField(Group.objects.none(), label="Kva lag er du trenar eller lagleiar for?", required=False)
+
+    def __init__(self, *args, workspace=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["groups"].queryset = Group.objects.filter(organization__workspace=workspace).select_related(
+            "organization").order_by("organization__name", "name")
 
     class Meta:
         model = AccountRequest
@@ -53,7 +61,13 @@ class AccountRequestForm(forms.ModelForm):
 class InviteForm(forms.Form):
     name = forms.CharField(label="Namn", max_length=200)
     email = forms.EmailField(label="E-post")
-    groups = GroupChoiceField(Group.objects.all(), label="Lagleiar for", required=False)
+    groups = GroupChoiceField(Group.objects.none(), label="Lagleiar for", required=False)
+
+    def __init__(self, *args, user, **kwargs):
+        super().__init__(*args, **kwargs)
+        from .permissions import managed_groups
+        self.fields["groups"].queryset = managed_groups(user).select_related("organization").order_by(
+            "organization__name", "name")
 
 
 # ---------------------------------------------------------------------------

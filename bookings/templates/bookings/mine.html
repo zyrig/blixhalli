@@ -3,6 +3,7 @@
 {% block content %}
 <div class="narrow" style="max-width:760px">
   <h2>Hei, {{ user.first_name|default:user.email }}</h2>
+  {% if my_orgs %}<p class="muted">Administrator for: {% for o in my_orgs %}{{ o }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
   {% if pending_requests %}
     <div class="card"><strong>{{ pending_requests }} førespurnad{{ pending_requests|pluralize:",er" }} om brukar ventar.</strong>
       <a href="/admin/bookings/accountrequest/?status__exact=pending">Sjå og godkjenn</a></div>
@@ -71,7 +72,8 @@
   <div class="card" style="padding:0 8px; overflow-x:auto"><table class="list">
     {% for b in bookings %}
       <tr><td>{{ b.date|date:"D j.n." }}</td><td>{{ b.group }}<br><span class="muted">{{ b.facility }}</span></td>
-          <td>{{ b.start_time|time:"H:i" }}–{{ b.end_time|time:"H:i" }}</td><td>{{ b.sections_label }}</td><td>{{ b.note }}</td>
+          <td>{{ b.start_time|time:"H:i" }}–{{ b.end_time|time:"H:i" }}</td><td>{{ b.sections_label }}</td>
+          <td>{{ b.note }}{% if b.status == "pending" %} <span class="status status-pending">Ventar på godkjenning</span>{% endif %}</td>
           <td><form method="post" action="{% url 'delete_booking' b.pk %}" onsubmit="return confirm('Slette enkelttida?')">{% csrf_token %}<button class="linklike" type="submit">Slett</button></form></td></tr>
     {% endfor %}
   </table></div>

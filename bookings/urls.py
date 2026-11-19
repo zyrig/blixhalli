@@ -6,6 +6,7 @@ from .forms import EmailLoginForm, ResetPasswordForm
 
 urlpatterns = [
     path("", views.home, name="home"),
+    path("eksport/", views.export_view, name="export"),
     # Lagleiarar og administratorar
     path("mine/", account_views.mine, name="mine"),
     path("avlys/<int:slot_id>/", leader_views.cancel_slot, name="cancel_slot"),
@@ -18,6 +19,7 @@ urlpatterns = [
     path("soknader/<int:pk>/godkjenn/", request_views.approve, name="approve_request"),
     path("soknader/<int:pk>/avsla/", request_views.reject, name="reject_request"),
     path("soknader/<int:pk>/foresla/", request_views.propose, name="propose_request"),
+    path("soknader/enkelttid/<int:pk>/", request_views.decide_booking, name="decide_booking"),
     # Brukarar
     path("be-om-brukar/", account_views.request_account, name="request_account"),
     path("inviter/", account_views.invite, name="invite"),

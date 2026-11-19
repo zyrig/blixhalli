@@ -7,8 +7,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import WEEKDAYS, Booking, Cancellation, Facility, Season, TrainingSlot
-from .permissions import can_manage
+from .models import WEEKDAYS, Allocation, Booking, Cancellation, Facility, Season, TrainingSlot
+from .permissions import can_admin_facility, can_manage_on_facility
 
 SLOT_MINUTES = 30
 MONTHS = ["jan.", "feb.", "mars", "apr.", "mai", "juni", "juli", "aug.", "sep.", "okt.", "nov.", "des."]
@@ -20,15 +20,21 @@ def _minutes(t):
 
 def home(request):
     """Framsida: gå rett til vekevisinga for det første anlegget."""
-    facility = Facility.objects.first()
+    facility = Facility.objects.filter(workspace=request.workspace).first() if request.workspace else None
     if facility is None:
         return render(request, "bookings/no_facility.html")
     return redirect("week_current", facility.slug)
 
 
+def get_facility(request, slug):
+    """Anlegget med denne adressa i området førespurnaden gjeld."""
+    return get_object_or_404(Facility.objects.select_related("owner", "manager", "workspace"),
+                             workspace=request.workspace, slug=slug)
+
+
 def visible_seasons(user, facility):
     seasons = facility.seasons.select_related("facility")
-    if not (user and user.is_staff):
+    if not (user and user.is_authenticated and can_admin_facility(user, facility)):
         seasons = seasons.filter(published=True)
     return seasons
 
@@ -55,6 +61,16 @@ def _entry(obj, kind, extra_meta=(), link=None):
         "first": obj.first_section, "last": obj.last_section,
         "tentative": getattr(obj, "tentative", False),
         "meta": " · ".join(meta), "link": link,
+    }
+
+
+def _allocation_entry(a):
+    """Ei tildelt blokk blir teikna svakt bak treningstidene til laga."""
+    return {
+        "title": a.organization.name, "category": "blokk", "kind": "blokk",
+        "start": a.start_time, "end": a.end_time, "first": a.first_section, "last": a.last_section,
+        "tentative": False, "link": None,
+        "meta": f"{a.start_time:%H:%M}–{a.end_time:%H:%M} · {a.sections_label} · tildelt av {a.facility.manager}",
     }
 
 
@@ -91,7 +107,7 @@ def build_grid(days, facility):
 # ---------------------------------------------------------------------------
 
 def season_view(request, facility, season_id=None):
-    facility = get_object_or_404(Facility, slug=facility)
+    facility = get_facility(request, facility)
     seasons = visible_seasons(request.user, facility)
     season = get_object_or_404(seasons, pk=season_id) if season_id else default_season(seasons)
     return render(request, "bookings/schedule.html", schedule_context(facility, season, seasons, user=request.user))
@@ -99,11 +115,14 @@ def season_view(request, facility, season_id=None):
 
 def schedule_context(facility, season, seasons, static_export=False, user=None):
     """Alt malen treng for å teikne sesongplanen. Blir òg brukt av export_static."""
-    context = {"mode": "season", "facility": facility, "facilities": Facility.objects.all(),
+    context = {"mode": "season", "facility": facility,
+               "facilities": Facility.objects.filter(workspace=facility.workspace),
                "season": season, "seasons": seasons, "static_export": static_export}
     if season is None:
         return context
-    show_admin_links = user is not None and user.is_staff and not static_export
+    show_admin_links = (user is not None and user.is_authenticated and can_admin_facility(user, facility)
+                        and not static_export)
+    context["facility_admin"] = show_admin_links
     days = []
     for number, name in WEEKDAYS:
         entries = [
@@ -121,7 +140,7 @@ def schedule_context(facility, season, seasons, static_export=False, user=None):
 # ---------------------------------------------------------------------------
 
 def week_view(request, facility, day=None):
-    facility = get_object_or_404(Facility, slug=facility)
+    facility = get_facility(request, facility)
     if day:
         try:
             date = datetime.date.fromisoformat(day)
@@ -137,13 +156,15 @@ def week_view(request, facility, day=None):
     seasons = [s for s in visible_seasons(user, facility) if s.covers(monday) or s.covers(sunday)]
     # Faste tider: utan sesong, eller i ein sesong brukaren kan sjå (utkast berre for administratorar)
     slots = TrainingSlot.objects.filter(facility=facility).select_related("group", "facility", "season")
-    if not user.is_staff:
+    facility_admin = user.is_authenticated and can_admin_facility(user, facility)
+    if not facility_admin:
         slots = slots.filter(Q(season__isnull=True) | Q(season__published=True))
     slots = list(slots)
     cancellations = {(c.slot_id, c.date): c for c in
                      Cancellation.objects.filter(slot__facility=facility, date__range=(monday, sunday))}
     bookings = list(Booking.objects.filter(facility=facility, date__range=(monday, sunday), status=Booking.APPROVED)
                     .select_related("group", "facility"))
+    allocations = list(Allocation.objects.filter(facility=facility).select_related("organization", "facility"))
 
     days = []
     for d in dates:
@@ -152,7 +173,7 @@ def week_view(request, facility, day=None):
             if not s.is_active_on(d):
                 continue
             cancellation = cancellations.get((s.pk, d))
-            manage = can_manage(user, s.group) and d >= timezone.localdate()
+            manage = can_manage_on_facility(user, s.group, facility) and d >= timezone.localdate()
             if cancellation:
                 e = _entry(s, "avlyst", [f"Avlyst{': ' + cancellation.reason if cancellation.reason else ''}"],
                            reverse("mine") if manage else None)
@@ -162,7 +183,11 @@ def week_view(request, facility, day=None):
             entries.append(e)
         for b in bookings:
             if b.date == d:
-                entries.append(_entry(b, "enkel", ["enkelttid"], reverse("mine") if can_manage(user, b.group) else None))
+                entries.append(_entry(b, "enkel", ["enkelttid"],
+                                      reverse("mine") if can_manage_on_facility(user, b.group, facility) else None))
+        for a in allocations:
+            if a.is_active_on(d):
+                entries.append(_allocation_entry(a))
         days.append({
             "number": d.weekday(), "name": f"{WEEKDAYS[d.weekday()][1]} {d.day}.{d.month}.",
             "short": f"{WEEKDAYS[d.weekday()][1][:3]} {d.day}.", "entries": entries,
@@ -175,7 +200,7 @@ def week_view(request, facility, day=None):
     else:
         span = f"{monday.day}. {MONTHS[monday.month - 1]} – {sunday.day}. {MONTHS[sunday.month - 1]} {sunday.year}"
     context = {
-        "mode": "week", "facility": facility, "facilities": Facility.objects.all(),
+        "mode": "week", "facility": facility, "facility_admin": facility_admin, "monday_iso": monday.isoformat(),
         "week_title": f"Veke {iso_week}", "week_span": span,
         "prev_week": (monday - datetime.timedelta(days=7)).isoformat(),
         "next_week": (monday + datetime.timedelta(days=7)).isoformat(),
@@ -186,3 +211,21 @@ def week_view(request, facility, day=None):
     }
     context.update(build_grid(days, facility))
     return render(request, "bookings/schedule.html", context)
+
+
+def export_view(request):
+    """Last ned treningsplanen for veka som Excel-fil (?dato=ÅÅÅÅ-MM-DD, standard: denne veka)."""
+    from django.http import HttpResponse
+
+    from .export import build_workbook
+    if request.workspace is None:
+        raise Http404("Ingen område")
+    try:
+        date = datetime.date.fromisoformat(request.GET.get("dato", ""))
+    except ValueError:
+        date = timezone.localdate()
+    content, filename = build_workbook(request.workspace, date)
+    response = HttpResponse(content,
+                            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response

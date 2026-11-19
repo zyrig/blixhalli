@@ -38,6 +38,8 @@
   .slot.kind-avlyst { background: repeating-linear-gradient(135deg, var(--surface) 0 6px, var(--anna) 6px 12px);
                  opacity: .8; z-index: 0; }
   .slot.kind-avlyst .title { text-decoration: line-through; }
+  .slot.kind-blokk { background: transparent; border: 2px dashed var(--accent); z-index: 0; opacity: .7; }
+  .slot.kind-blokk .title { font-weight: 600; }
   .slot.kind-enkel { z-index: 2; box-shadow: inset 4px 0 0 var(--accent); }
   .muted { color: var(--muted); }
   .cat-fotball { background: var(--fotball); } .cat-handball { background: var(--handball); }
@@ -70,7 +72,7 @@
 {% endblock %}
 {% block content %}
 {% if mode == "season" and not season %}
-  <p>Ingen sesongar er lagt inn for {{ facility.name }} enno.{% if user.is_staff %} <a href="/admin/bookings/season/add/?facility={{ facility.pk }}">Legg til ein sesong</a>.{% endif %}</p>
+  <p>Ingen sesongar er lagt inn for {{ facility.name }} enno.{% if facility_admin %} <a href="/admin/bookings/season/add/?facility={{ facility.pk }}">Legg til ein sesong</a>.{% endif %}</p>
 {% else %}
   <div class="toolbar">
   {% if mode == "week" %}
@@ -83,6 +85,10 @@
       <a class="button" href="{% url 'new_request' facility.slug %}">+ Søk om fast tid</a>
       <a class="button" href="{% url 'new_booking' facility.slug %}">+ Book enkelttid</a>
     {% endif %}
+    {% if facility_admin %}
+      <a class="button" href="/admin/bookings/allocation/add/?facility={{ facility.pk }}">+ Tildel blokk</a>
+    {% endif %}
+    <a href="{% url 'export' %}?dato={{ monday_iso }}">Last ned Excel</a>
   {% else %}
     <h2>Sesongplan {{ season.name }}</h2>
     {% if not season.published %}<span class="badge">Utkast</span>{% endif %}
@@ -92,7 +98,7 @@
       </select>
     {% endif %}
     {% if not static_export %}<a href="{% url 'week_current' facility.slug %}">Denne veka</a>{% endif %}
-    {% if user.is_staff and not static_export %}
+    {% if facility_admin and not static_export %}
       <a class="button" href="/admin/bookings/trainingslot/add/?season={{ season.pk }}">+ Legg til fast tid</a>
     {% endif %}
   {% endif %}
@@ -127,7 +133,7 @@
   </div>
 
   <div class="legend">
-    {% if mode == "week" %}<span style="--c: var(--accent)">Enkelttid</span><span style="--c: repeating-linear-gradient(135deg, var(--surface) 0 3px, var(--anna) 3px 6px)">Avlyst (ledig)</span>{% endif %}
+    {% if mode == "week" %}<span style="--c: var(--accent)">Enkelttid</span><span style="--c: transparent; outline: 1px dashed var(--accent)">Blokk tildelt ein organisasjon</span><span style="--c: repeating-linear-gradient(135deg, var(--surface) 0 3px, var(--anna) 3px 6px)">Avlyst (ledig)</span>{% endif %}
     <span style="--c: var(--fotball)">Fotball</span><span style="--c: var(--handball)">Handball</span>
     <span style="--c: var(--friidrett)">Friidrett/turn</span><span style="--c: var(--trim)">Trim</span>
     <span style="--c: var(--volleyball)">Volleyball</span><span style="--c: var(--badminton)">Badminton</span>

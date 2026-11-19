@@ -3,10 +3,12 @@
 {% block content %}
 <div class="narrow" style="max-width:760px">
   <h2>Søknader om faste tider</h2>
+  <p class="muted">Du ser søknadene du kan godkjenne: for anlegg organisasjonen din fordeler eller eig,
+     og for blokker organisasjonen din har fått tildelt.</p>
   {% for r in open_requests %}
     <div class="card">
       <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">
-        <strong>{{ r.group }}</strong>
+        <strong>{{ r.group }} <span class="muted">({{ r.group.organization }})</span></strong>
         <span class="status status-{{ r.status }}">{{ r.get_status_display }}</span>
       </div>
       <div>{{ r.summary }}</div>
@@ -29,8 +31,26 @@
       {% endif %}
     </div>
   {% empty %}
-    <p class="muted">Ingen søknader ventar.</p>
+    <p class="muted">Ingen søknader om faste tider ventar.</p>
   {% endfor %}
+
+  {% if pending_bookings %}
+  <h3>Enkelttider som ventar</h3>
+  {% for b in pending_bookings %}
+    <div class="card">
+      <strong>{{ b.group }} <span class="muted">({{ b.group.organization }})</span></strong>
+      <div>{{ b.date|date:"l j.n.Y" }} {{ b.start_time|time:"H:i" }}–{{ b.end_time|time:"H:i" }}, {{ b.facility }} {{ b.sections_label }}</div>
+      {% if b.note %}<p>«{{ b.note }}»</p>{% endif %}
+      {% if b.clash %}<div class="warn">{{ b.clash }}</div>{% endif %}
+      <div class="actions">
+        <form method="post" action="{% url 'decide_booking' b.pk %}">{% csrf_token %}<input type="hidden" name="answer" value="approve">
+          <button class="btn" type="submit"{% if b.clash %} disabled{% endif %}>Godkjenn</button></form>
+        <form method="post" action="{% url 'decide_booking' b.pk %}">{% csrf_token %}<input type="hidden" name="answer" value="reject">
+          <button class="btn secondary" type="submit">Avslå</button></form>
+      </div>
+    </div>
+  {% endfor %}
+  {% endif %}
 
   {% if recent %}
   <h3>Sist handsama</h3>

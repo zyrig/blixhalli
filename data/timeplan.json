@@ -1,8 +1,116 @@
 [
 {
+  "model": "bookings.workspace",
+  "pk": 1,
+  "fields": {
+    "name": "Vik",
+    "slug": "vik",
+    "domain": ""
+  }
+},
+{
+  "model": "bookings.organization",
+  "pk": 1,
+  "fields": {
+    "workspace": 1,
+    "name": "Vik kommune",
+    "slug": "vik-kommune",
+    "kind": "kommune",
+    "contact_email": "",
+    "admins": []
+  }
+},
+{
+  "model": "bookings.organization",
+  "pk": 2,
+  "fields": {
+    "workspace": 1,
+    "name": "Vik IL",
+    "slug": "vikil",
+    "kind": "idrettslag",
+    "contact_email": "",
+    "admins": []
+  }
+},
+{
+  "model": "bookings.organization",
+  "pk": 3,
+  "fields": {
+    "workspace": 1,
+    "name": "Trim",
+    "slug": "trim",
+    "kind": "anna",
+    "contact_email": "",
+    "admins": []
+  }
+},
+{
+  "model": "bookings.organization",
+  "pk": 4,
+  "fields": {
+    "workspace": 1,
+    "name": "Friidrett/turn",
+    "slug": "friidrett",
+    "kind": "anna",
+    "contact_email": "",
+    "admins": []
+  }
+},
+{
+  "model": "bookings.organization",
+  "pk": 5,
+  "fields": {
+    "workspace": 1,
+    "name": "Handball",
+    "slug": "handball",
+    "kind": "anna",
+    "contact_email": "",
+    "admins": []
+  }
+},
+{
+  "model": "bookings.organization",
+  "pk": 6,
+  "fields": {
+    "workspace": 1,
+    "name": "Sognekraft",
+    "slug": "sognekraft",
+    "kind": "anna",
+    "contact_email": "",
+    "admins": []
+  }
+},
+{
+  "model": "bookings.organization",
+  "pk": 7,
+  "fields": {
+    "workspace": 1,
+    "name": "Vik fengsel",
+    "slug": "vik-fengsel",
+    "kind": "anna",
+    "contact_email": "",
+    "admins": []
+  }
+},
+{
+  "model": "bookings.organization",
+  "pk": 8,
+  "fields": {
+    "workspace": 1,
+    "name": "Vik Ørsta",
+    "slug": "vik-orsta",
+    "kind": "anna",
+    "contact_email": "",
+    "admins": []
+  }
+},
+{
   "model": "bookings.facility",
   "pk": 1,
   "fields": {
+    "workspace": 1,
+    "owner": 1,
+    "manager": 1,
     "name": "Blixhalli",
     "slug": "blixhalli",
     "kind": "hall",
@@ -39,6 +147,7 @@
   "model": "bookings.group",
   "pk": 1,
   "fields": {
+    "organization": 3,
     "name": "\"Tassatrim\"",
     "category": "trim",
     "contact": "",
@@ -49,6 +158,7 @@
   "model": "bookings.group",
   "pk": 2,
   "fields": {
+    "organization": 2,
     "name": "Fotball -damelag",
     "category": "fotball",
     "contact": "",
@@ -59,6 +169,7 @@
   "model": "bookings.group",
   "pk": 3,
   "fields": {
+    "organization": 4,
     "name": "Friidrett bootcamp",
     "category": "friidrett",
     "contact": "",
@@ -69,6 +180,7 @@
   "model": "bookings.group",
   "pk": 4,
   "fields": {
+    "organization": 2,
     "name": "Fotball G 2019",
     "category": "fotball",
     "contact": "",
@@ -79,6 +191,7 @@
   "model": "bookings.group",
   "pk": 5,
   "fields": {
+    "organization": 2,
     "name": "Fotball -herrelag",
     "category": "fotball",
     "contact": "",
@@ -89,6 +202,7 @@
   "model": "bookings.group",
   "pk": 6,
   "fields": {
+    "organization": 7,
     "name": "Vik fengsel",
     "category": "anna",
     "contact": "",
@@ -99,6 +213,7 @@
   "model": "bookings.group",
   "pk": 7,
   "fields": {
+    "organization": 5,
     "name": "Handball J11",
     "category": "handball",
     "contact": "",
@@ -109,6 +224,7 @@
   "model": "bookings.group",
   "pk": 8,
   "fields": {
+    "organization": 4,
     "name": "Friidrett - turn 2 grupper (1/2 og 3/4 klasse) Fotball (G8-9) etter nyttår",
     "category": "friidrett",
     "contact": "",
@@ -119,6 +235,7 @@
   "model": "bookings.group",
   "pk": 9,
   "fields": {
+    "organization": 5,
     "name": "Handball J11 og J13",
     "category": "handball",
     "contact": "",
@@ -129,6 +246,7 @@
   "model": "bookings.group",
   "pk": 10,
   "fields": {
+    "organization": 5,
     "name": "Handball 1. og 2.klasse",
     "category": "handball",
     "contact": "",
@@ -139,6 +257,7 @@
   "model": "bookings.group",
   "pk": 11,
   "fields": {
+    "organization": 5,
     "name": "Handball 2. og 3. klasse",
     "category": "handball",
     "contact": "",
@@ -149,6 +268,7 @@
   "model": "bookings.group",
   "pk": 12,
   "fields": {
+    "organization": 2,
     "name": "Badminton",
     "category": "badminton",
     "contact": "",
@@ -159,6 +279,7 @@
   "model": "bookings.group",
   "pk": 13,
   "fields": {
+    "organization": 5,
     "name": "Handball J13",
     "category": "handball",
     "contact": "",
@@ -169,6 +290,7 @@
   "model": "bookings.group",
   "pk": 14,
   "fields": {
+    "organization": 5,
     "name": "Handball J13 og Senior",
     "category": "handball",
     "contact": "",
@@ -179,6 +301,7 @@
   "model": "bookings.group",
   "pk": 15,
   "fields": {
+    "organization": 2,
     "name": "Fotball J (2014/2015)",
     "category": "fotball",
     "contact": "",
@@ -189,6 +312,7 @@
   "model": "bookings.group",
   "pk": 16,
   "fields": {
+    "organization": 2,
     "name": "Fotball J (2009-2013)",
     "category": "fotball",
     "contact": "",
@@ -199,6 +323,7 @@
   "model": "bookings.group",
   "pk": 17,
   "fields": {
+    "organization": 2,
     "name": "Fotball G (2014-2016)",
     "category": "fotball",
     "contact": "",
@@ -209,6 +334,7 @@
   "model": "bookings.group",
   "pk": 18,
   "fields": {
+    "organization": 3,
     "name": "Trim Zumba",
     "category": "trim",
     "contact": "",
@@ -219,6 +345,7 @@
   "model": "bookings.group",
   "pk": 19,
   "fields": {
+    "organization": 2,
     "name": "Volleyball",
     "category": "volleyball",
     "contact": "",
@@ -229,6 +356,7 @@
   "model": "bookings.group",
   "pk": 20,
   "fields": {
+    "organization": 2,
     "name": "Fotball G (2011-2013)",
     "category": "fotball",
     "contact": "",
@@ -239,6 +367,7 @@
   "model": "bookings.group",
   "pk": 21,
   "fields": {
+    "organization": 3,
     "name": "Trim, \"mandagstrening\"",
     "category": "trim",
     "contact": "",
@@ -249,6 +378,7 @@
   "model": "bookings.group",
   "pk": 22,
   "fields": {
+    "organization": 4,
     "name": "Friidrett/sirkel",
     "category": "friidrett",
     "contact": "",
@@ -259,6 +389,7 @@
   "model": "bookings.group",
   "pk": 23,
   "fields": {
+    "organization": 8,
     "name": "Vik Ørsta saman med Sognekraft",
     "category": "anna",
     "contact": "",
@@ -269,6 +400,7 @@
   "model": "bookings.group",
   "pk": 24,
   "fields": {
+    "organization": 2,
     "name": "Fotball damer",
     "category": "fotball",
     "contact": "",
@@ -279,6 +411,7 @@
   "model": "bookings.group",
   "pk": 25,
   "fields": {
+    "organization": 2,
     "name": "Fotball G8",
     "category": "fotball",
     "contact": "",
@@ -289,6 +422,7 @@
   "model": "bookings.group",
   "pk": 26,
   "fields": {
+    "organization": 2,
     "name": "Fotball G/J 2016",
     "category": "fotball",
     "contact": "",
@@ -299,6 +433,7 @@
   "model": "bookings.group",
   "pk": 27,
   "fields": {
+    "organization": 2,
     "name": "Fotball G10-11",
     "category": "fotball",
     "contact": "",
@@ -309,6 +444,7 @@
   "model": "bookings.group",
   "pk": 28,
   "fields": {
+    "organization": 3,
     "name": "Trim, Zumba",
     "category": "trim",
     "contact": "",
@@ -319,6 +455,7 @@
   "model": "bookings.group",
   "pk": 30,
   "fields": {
+    "organization": 7,
     "name": "Vik Fengsel",
     "category": "anna",
     "contact": "",
@@ -329,6 +466,7 @@
   "model": "bookings.group",
   "pk": 31,
   "fields": {
+    "organization": 2,
     "name": "Fotball A-lag, Vik2/ungdomslaga",
     "category": "fotball",
     "contact": "",
@@ -339,6 +477,7 @@
   "model": "bookings.group",
   "pk": 32,
   "fields": {
+    "organization": 5,
     "name": "Handball 1. klasse",
     "category": "handball",
     "contact": "",
@@ -349,6 +488,7 @@
   "model": "bookings.group",
   "pk": 33,
   "fields": {
+    "organization": 5,
     "name": "Handball J10",
     "category": "handball",
     "contact": "",
@@ -359,6 +499,7 @@
   "model": "bookings.group",
   "pk": 35,
   "fields": {
+    "organization": 2,
     "name": "Fotball G12",
     "category": "fotball",
     "contact": "",
@@ -369,6 +510,7 @@
   "model": "bookings.group",
   "pk": 36,
   "fields": {
+    "organization": 2,
     "name": "Fotball J12",
     "category": "fotball",
     "contact": "",
@@ -379,6 +521,7 @@
   "model": "bookings.group",
   "pk": 37,
   "fields": {
+    "organization": 5,
     "name": "Handball J12",
     "category": "handball",
     "contact": "",
@@ -389,6 +532,7 @@
   "model": "bookings.group",
   "pk": 38,
   "fields": {
+    "organization": 4,
     "name": "Friidrett - turn (oktober-november), Fotball J13-14 frå desember",
     "category": "friidrett",
     "contact": "",
@@ -399,6 +543,7 @@
   "model": "bookings.group",
   "pk": 39,
   "fields": {
+    "organization": 5,
     "name": "Handball J12 og Senior",
     "category": "handball",
     "contact": "",
@@ -409,6 +554,7 @@
   "model": "bookings.group",
   "pk": 40,
   "fields": {
+    "organization": 2,
     "name": "Fotball J13-14",
     "category": "fotball",
     "contact": "",
@@ -419,6 +565,7 @@
   "model": "bookings.group",
   "pk": 41,
   "fields": {
+    "organization": 2,
     "name": "Fotball J10-11",
     "category": "fotball",
     "contact": "",
@@ -429,6 +576,7 @@
   "model": "bookings.group",
   "pk": 42,
   "fields": {
+    "organization": 8,
     "name": "Vik Ørsta",
     "category": "anna",
     "contact": "",
@@ -439,6 +587,7 @@
   "model": "bookings.group",
   "pk": 44,
   "fields": {
+    "organization": 3,
     "name": "Trim, \"dametrim\"",
     "category": "trim",
     "contact": "",
@@ -449,6 +598,7 @@
   "model": "bookings.group",
   "pk": 45,
   "fields": {
+    "organization": 2,
     "name": "Fotball Old Boys",
     "category": "fotball",
     "contact": "",
@@ -459,6 +609,7 @@
   "model": "bookings.group",
   "pk": 46,
   "fields": {
+    "organization": 6,
     "name": "Sognekraft -bandy",
     "category": "anna",
     "contact": "",

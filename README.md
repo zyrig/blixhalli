@@ -3,7 +3,11 @@
 Ein nettapp for å setje opp og vise treningstidene i Blixhalli, og seinare på fotballbanane ute.
 Han fungerer i nettlesaren på både PC og mobil.
 
-- **Fleire anlegg** med faner øvst: Blixhalli, Kunstgras 11'ar, Kunstgras 7'ar og Grasbane (sjå `data/anlegg.json`).
+- **Organisasjonar:** Vik kommune eig anlegga og fordeler tida i Blixhalli. Vik IL fordeler tida på banane,
+  og fordeler vidare blokker IL-et har fått i hallen. Andre organisasjonar (t.d. Vik fengsel) søkjer i same app,
+  og blir godkjende av den som fordeler tida på anlegget.
+- **Excel-eksport** av treningsplanen for ei veke (`/eksport/`), i same rutenett-oppsett som det gamle reknearket.
+- **Fleire anlegg** med faner øvst: Blixhalli, Kunstgras 11'ar, Kunstgras 7'ar og Grasbane (sjå `data/oppsett.json`).
   Kvart anlegg har eiga inndeling og eigne reglar for kva som kan bookast, t.d. 1/4 eller 1/2 bane.
 - **Søknad om fast tid:** lagleiaren vel anlegg, lag, vekedag, klokkeslett, kor stor del, og start- og sluttdato.
   Administrator godkjenner, avslår eller føreslår ei anna tid på `/soknader/`, og laget kan godta forslaget med eitt trykk.
@@ -25,7 +29,7 @@ SQLite, ein database som ligg i éi fil og ikkje treng noko oppsett.
 
 ## Anlegg og kva som kan bookast
 
-Anlegga i `data/anlegg.json` blir oppretta automatisk (`python manage.py ensure_facilities`, køyrer ved kvar deploy).
+Området, organisasjonane og anlegga i `data/oppsett.json` blir oppretta automatisk (`python manage.py ensure_facilities`, køyrer ved kvar deploy).
 Endringar gjer du i admin under **Anlegg**. Dei blir aldri overskrivne.
 
 - **Delar:** namna på delane, skilde med komma, frå venstre mot høgre, t.d. `A,B,C,D`.
@@ -40,6 +44,29 @@ Endringar gjer du i admin under **Anlegg**. Dei blir aldri overskrivne.
 
 Sesongar er valfrie. Ei fast tid har eit anlegg og ein periode (gjeld frå/til). Sesongar blir berre brukte for
 importerte sesongplanar frå Excel.
+
+## Organisasjonar og godkjenning
+
+| Rolle | Kva dei kan |
+|---|---|
+| Plattformadministrator (superuser) | Alt, i alle område |
+| Administrator i kommunen | Styrer anlegga kommunen eig: tildeler blokker, godkjenner søknader, overstyrer alt |
+| Administrator i Vik IL | Fordeler tida på banane, og blokkene IL-et har fått i hallen; administrerer laga sine |
+| Lagleiar | Søkjer, avlyser og bookar for sine eigne lag |
+
+Kven som godkjenner ein søknad:
+- **Fordelaren og eigaren av anlegget** kan alltid godkjenne.
+- **Organisasjonen sjølv** kan godkjenne når tida ligg inne i ei **blokk** han har fått tildelt
+  (t.d. Vik IL fordeler «måndag 17–21, heile salen» til laga sine).
+- **Enkelttider** blir godkjende med ein gong når organisasjonen fordeler tida sjølv eller har blokka. Elles ventar
+  dei på godkjenning på `/soknader/`.
+
+Ein blir administrator ved å bli lagd til under **Organisasjonar → Administratorar** i admin. Då får ein òg tilgang
+til `/admin/`, men ser berre det som høyrer til organisasjonen sin.
+
+**Fleire idrettslag seinare:** alt høyrer til eit **område** (her «Vik»). Med eige domene kan kvart område få si eiga
+adresse, t.d. `vik.treningstider.no` (set `BASE_DOMAIN=treningstider.no`), eller eit heilt eige domene (feltet
+«eige domene» på området).
 
 ## Brukarar og roller
 
@@ -134,51 +161,38 @@ python manage.py makemigrations
 python manage.py migrate
 ```
 
-## Leggje appen ut på nett (Render + Supabase)
+## Leggje appen ut på nett (Vercel + Supabase)
 
-Appen køyrer på [Render](https://render.com) og lagrar data i [Supabase](https://supabase.com)
-(PostgreSQL). Begge kan liggje i Frankfurt, så data blir verande i EU.
-Oppskrifta for Render ligg i `render.yaml`, og `build.sh` køyrer ved kvar ny versjon.
+Appen køyrer på [Vercel](https://vercel.com) og lagrar data i [Supabase](https://supabase.com) (PostgreSQL).
+`vercel.json` og `build_vercel.sh` gjer at databasen blir oppdatert ved kvar ny produksjonsversjon.
 
 **1. Database i Supabase**
-1. Lag eit nytt prosjekt i Supabase. Vel regionen **Central EU (Frankfurt)**, og noter databasepassordet.
-2. Trykk **Connect** øvst i prosjektet og vel **Session pooler**. Kopier adressa, som ser slik ut:
-   `postgresql://postgres.<prosjekt>:[YOUR-PASSWORD]@aws-0-eu-central-1.pooler.supabase.com:5432/postgres`
-3. Byt ut `[YOUR-PASSWORD]` med databasepassordet.
+1. Lag eit nytt prosjekt i Supabase med regionen **Central EU (Frankfurt)**, og noter databasepassordet.
+2. Trykk **Connect** og vel **Session pooler**. Kopier adressa, og byt ut `[YOUR-PASSWORD]` med passordet.
 
-Bruk «Session pooler» og ikkje «Direct connection». Render brukar berre IPv4, og den direkte
-tilkoplinga til Supabase er berre IPv6.
-
-**2. Appen i Render**
-1. Logg inn på Render med GitHub-kontoen din.
-2. Vel **New → Blueprint**, og vel repoet `treningstider`.
-3. Fyll inn verdiane Render spør om:
+**2. Miljøvariablar i Vercel** (Project → Settings → Environment Variables, kryss av berre for **Production**)
 
 | Variabel | Kva du skriv |
 |---|---|
-| `DATABASE_URL` | adressa frå Supabase (steg 1) |
-| `DJANGO_ADMIN_EMAIL` | e-postadressa di. Du blir første administrator. |
+| `DATABASE_URL` | adressa frå Supabase |
+| `DJANGO_SECRET_KEY` | ein lang, tilfeldig tekst (t.d. frå ein passordgenerator, minst 50 teikn) |
+| `DJANGO_ADMIN_EMAIL` | e-postadressa di. Du blir plattformadministrator. |
 | `DJANGO_ADMIN_PASSWORD` | eit mellombels passord. Endre det etter første innlogging. |
-| `DJANGO_FROM_EMAIL`, `EMAIL_HOST`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` | e-postoppsett (sjå under). Kan stå tomme i starten. |
+| `DEFAULT_WORKSPACE` | `vik` |
 
-4. Trykk **Deploy**. Første gong blir tabellane laga, tidene frå `data/timeplan.json`
-   lasta inn og administratoren oppretta. Appen får ei adresse som `https://treningstider.onrender.com`.
+Så **Deployments → … → Redeploy**. Første gong blir tabellane laga, startdata og anlegg lagt inn, og
+administratoren oppretta. Appen ligg på `https://<prosjektnamn>.vercel.app`.
 
-Kvar gong noko blir pusha til `main`, legg Render ut den nye versjonen automatisk.
+Førehandsversjonar (andre greiner enn `main`) rører ikkje databasen. Hugs at gratisvarianten av Vercel
+(Hobby) er for ikkje-kommersiell bruk.
 
-**E-post** (invitasjonar, «Gløymt passord», varsel). Utan dette blir e-post berre skriven til
-loggen i Render. Det enklaste er Gmail med eit *app-passord* (krev totrinnsinnlogging på Google-kontoen):
+**Alternativ: Render.** `render.yaml` og `build.sh` gjer det same for [Render](https://render.com)
+(New → Blueprint). Gratisvarianten der «søv» etter 15 minutt utan besøk.
+
+**E-post** (invitasjonar, «Gløymt passord», varsel). Utan dette blir e-post berre skriven til loggen.
+Det enklaste er Gmail med eit *app-passord* (krev totrinnsinnlogging på Google-kontoen):
 `EMAIL_HOST=smtp.gmail.com`, `EMAIL_HOST_USER=<gmail-adressa>`, `EMAIL_HOST_PASSWORD=<app-passordet>`,
-`DJANGO_FROM_EMAIL=Treningstider <gmail-adressa>`. Seinare kan ei teneste som Brevo eller
-Resend og ei eiga avsendaradresse gi betre levering.
-
-**Godt å vite**
-- **Gratisvarianten av Render** «søv» etter 15 minutt utan besøk, og første besøk etterpå tek om lag
-  eitt minutt. Byt `plan: free` til `plan: starter` i `render.yaml` (om lag 7 dollar i månaden)
-  for ein app som alltid er vaken.
-- **Gratisprosjekt i Supabase** kan bli pausa etter ein periode utan bruk. Sjå vilkåra hos Supabase.
-- **Eige domene**, t.d. `treningstider.idrettslaget.no`: legg det til under *Settings → Custom Domains*
-  i Render, og legg domenet til i `DJANGO_ALLOWED_HOSTS`.
+`DJANGO_FROM_EMAIL=Treningstider <gmail-adressa>`.
 
 **Miljøvariablar**
 
@@ -188,7 +202,9 @@ Resend og ei eiga avsendaradresse gi betre levering.
 | `DJANGO_SECRET_KEY` | ein lang, tilfeldig og hemmeleg tekst (Render lagar han) |
 | `DJANGO_DEBUG` | `0` i drift |
 | `DJANGO_ALLOWED_HOSTS` | `treningstider.idrettslaget.no` (Render-adressa blir lagd til automatisk) |
-| `DJANGO_ADMIN_EMAIL`, `DJANGO_ADMIN_PASSWORD` | første administrator |
+| `DJANGO_ADMIN_EMAIL`, `DJANGO_ADMIN_PASSWORD` | første (plattform)administrator |
+| `DEFAULT_WORKSPACE` | `vik`: området som blir vist når adressa ikkje seier noko anna |
+| `BASE_DOMAIN` | `treningstider.no`: gir underadresser per område, t.d. `vik.treningstider.no` |
 | `DJANGO_FROM_EMAIL` | `Treningstider <post@example.no>` |
 | `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` | SMTP-tenaren som sender e-post |
 

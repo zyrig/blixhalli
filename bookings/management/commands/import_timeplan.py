@@ -14,7 +14,7 @@ import openpyxl
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from bookings.models import Facility, Group, Season, TrainingSlot, default_facility
+from bookings.models import Facility, Group, Organization, Season, TrainingSlot, default_facility, default_organization
 
 TIME_RE = re.compile(r"^\s*(\d{1,2})(?:[.:](\d{2}))?\s*-\s*(\d{1,2})(?:[.:](\d{2}))?\s*$")
 FIRST_DAY_COL = 2  # kolonne B
@@ -43,9 +43,11 @@ class Command(BaseCommand):
         parser.add_argument("path")
         parser.add_argument("--replace", action="store_true", help="Slett eksisterande tider i sesongane først.")
         parser.add_argument("--anlegg", help="Adressa (slug) til anlegget, t.d. blixhalli. Standard: første anlegg.")
+        parser.add_argument("--organisasjon", help="Kortnamnet til organisasjonen nye lag skal høyre til, t.d. vikil. "
+                                                   "Standard: første idrettslag i området.")
 
     @transaction.atomic
-    def handle(self, path, replace, anlegg=None, **options):
+    def handle(self, path, replace, anlegg=None, organisasjon=None, **options):
         if anlegg:
             try:
                 self.facility = Facility.objects.get(slug=anlegg)
@@ -53,6 +55,13 @@ class Command(BaseCommand):
                 raise CommandError(f"Fann ikkje anlegget «{anlegg}».")
         else:
             self.facility = Facility.objects.get(pk=default_facility())
+        if organisasjon:
+            try:
+                self.organization = Organization.objects.get(workspace=self.facility.workspace, slug=organisasjon)
+            except Organization.DoesNotExist:
+                raise CommandError(f"Fann ikkje organisasjonen «{organisasjon}».")
+        else:
+            self.organization = default_organization(self.facility.workspace)
         try:
             wb = openpyxl.load_workbook(path)
         except Exception as e:  # noqa: BLE001
@@ -107,7 +116,10 @@ class Command(BaseCommand):
                 last_section = min((c2 - FIRST_DAY_COL) - weekday * 3 + 1, 3)
 
                 name, tentative = clean_name(value)
-                group, _ = Group.objects.get_or_create(name=name, defaults={"category": Group.guess_category(name)})
+                group = Group.objects.filter(organization__workspace=self.facility.workspace, name=name).first()
+                if group is None:
+                    group = Group.objects.create(organization=self.organization, name=name,
+                                                 category=Group.guess_category(name))
                 slot = TrainingSlot(
                     facility=self.facility, season=season, group=group, weekday=weekday,
                     start_time=times[r1][0], end_time=times[r2][1],
