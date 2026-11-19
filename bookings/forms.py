@@ -54,3 +54,57 @@ class InviteForm(forms.Form):
     name = forms.CharField(label="Namn", max_length=200)
     email = forms.EmailField(label="E-post")
     groups = GroupChoiceField(Group.objects.all(), label="Lagleiar for", required=False)
+
+
+# ---------------------------------------------------------------------------
+# Avlysingar og enkelttider (steg 2)
+# ---------------------------------------------------------------------------
+from django.utils import timezone  # noqa: E402
+
+from .models import Booking, Cancellation  # noqa: E402
+from .permissions import managed_groups  # noqa: E402
+
+DATE_INPUT = forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")
+TIME_INPUT = forms.TimeInput(attrs={"type": "time", "step": 1800}, format="%H:%M")
+
+
+def _not_in_past(date):
+    if date and date < timezone.localdate():
+        raise forms.ValidationError("Datoen har vore.")
+    return date
+
+
+class CancellationForm(forms.ModelForm):
+    class Meta:
+        model = Cancellation
+        fields = ["date", "reason"]
+        widgets = {"date": DATE_INPUT}
+        labels = {"reason": "Grunn (valfritt)"}
+
+    def __init__(self, *args, slot, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.instance.slot = slot
+
+    def clean_date(self):
+        date = _not_in_past(self.cleaned_data["date"])
+        if Cancellation.objects.filter(slot=self.instance.slot, date=date).exists():
+            raise forms.ValidationError("Tida er alt avlyst denne datoen.")
+        return date
+
+
+class BookingForm(forms.ModelForm):
+    class Meta:
+        model = Booking
+        fields = ["group", "date", "start_time", "end_time", "first_section", "last_section", "note"]
+        widgets = {"date": DATE_INPUT, "start_time": TIME_INPUT, "end_time": TIME_INPUT}
+        labels = {"group": "Lag"}
+
+    def __init__(self, *args, user, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Lagleiarar kan berre booke for sine eigne lag.
+        self.fields["group"].queryset = managed_groups(user)
+        if self.fields["group"].queryset.count() == 1:
+            self.fields["group"].initial = self.fields["group"].queryset.first()
+
+    def clean_date(self):
+        return _not_in_past(self.cleaned_data["date"])

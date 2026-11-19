@@ -1,0 +1,9 @@
+{% extends "bookings/base.html" %}
+{% block title %}Book enkelttid – Blixhalli{% endblock %}
+{% block content %}
+<div class="narrow">
+  <h2>Book enkelttid</h2>
+  <p>Ei enkelttid er éin dato, t.d. ekstratrening eller kamp. Er plassen ledig, blir tida godkjend med ein gong.</p>
+  <form method="post" class="card">{% csrf_token %}{{ form.as_div }}<button type="submit" class="btn">Book</button></form>
+</div>
+{% endblock %}

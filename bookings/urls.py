@@ -1,13 +1,22 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
 
-from . import account_views, views
+from . import account_views, leader_views, views
 from .forms import EmailLoginForm, ResetPasswordForm
 
 urlpatterns = [
-    path("", views.schedule, name="schedule"),
-    path("sesong/<int:season_id>/", views.schedule, name="season"),
+    # Visning (for alle)
+    path("", views.week_view, name="schedule"),
+    path("veke/<str:day>/", views.week_view, name="week"),
+    path("sesong/", views.season_view, name="season_default"),
+    path("sesong/<int:season_id>/", views.season_view, name="season"),
+    # Lagleiarar og administratorar
     path("mine/", account_views.mine, name="mine"),
+    path("avlys/<int:slot_id>/", leader_views.cancel_slot, name="cancel_slot"),
+    path("avlysing/<int:pk>/angre/", leader_views.undo_cancellation, name="undo_cancellation"),
+    path("enkelttid/ny/", leader_views.new_booking, name="new_booking"),
+    path("enkelttid/<int:pk>/slett/", leader_views.delete_booking, name="delete_booking"),
+    # Brukarar
     path("be-om-brukar/", account_views.request_account, name="request_account"),
     path("inviter/", account_views.invite, name="invite"),
     # Innlogging og passord (Django sine ferdige views, med våre malar)

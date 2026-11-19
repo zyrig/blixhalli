@@ -3,7 +3,10 @@
 Ein nettapp for å setje opp og vise treningstidene i Blixhalli. Han fungerer i
 nettlesaren på både PC og mobil.
 
-- **Vekeplan per sesong** (t.d. 2026/2027), lagt opp som rutenett slik som i reknearket.
+- **Vekevising** (framsida) for ei bestemt veke: faste tider, avlysingar og enkelttider.
+- **Avlysingar:** ei fast tid kan avlysast ein dato, og plassen blir ledig for andre.
+- **Enkelttider** (ekstratrening, kamp) blir godkjende automatisk når plassen er ledig.
+- **Sesongplan** (`/sesong/`) (t.d. 2026/2027), lagt opp som rutenett slik som i reknearket.
 - **Salen er delt i tre** (1/3, 2/3, 3/3). Ei treningstid brukar éin, to eller alle tre delane.
 - **Kollisjonskontroll:** appen stoppar to grupper frå å få same del av salen samstundes.
 - **Utkast:** ein sesong kan vere eit utkast som berre dei som er logga inn ser.
@@ -17,8 +20,9 @@ SQLite, ein database som ligg i éi fil og ikkje treng noko oppsett.
 
 ## Brukarar og roller
 
-- **Alle** kan sjå vekeplanen utan å logge inn.
-- **Trenarar/lagleiarar** loggar inn med e-post og passord på `/logg-inn/`, og ser laga og tidene sine under «Mine lag».
+- **Alle** kan sjå kva lag som har kva tid, utan å logge inn.
+- **Trenarar/lagleiarar** loggar inn med e-post og passord på `/logg-inn/`. Dei kan berre administrere
+  tidene til sine eigne lag: avlyse ein dato, angre avlysinga, og booke eller slette enkelttider.
 - **Administratorar** (brukarar med «staff»-tilgang) kan endre alt via `/admin/` og invitere brukarar på `/inviter/`.
 
 Nye brukarar kan kome inn på to måtar:
@@ -84,8 +88,10 @@ For å hente dataa inn i ein tom lokal database: `python manage.py loaddata data
 
 | Fil | Kva ho gjer |
 |---|---|
-| `bookings/models.py` | Data: Sesong, Gruppe, Treningstid, og regelen mot kollisjonar |
-| `bookings/views.py` | Lagar vekeplan-sida |
+| `bookings/models.py` | Data: Sesong, Gruppe, Treningstid, Avlysing, Enkelttid, og reglane mot kollisjonar |
+| `bookings/permissions.py` | Kven kan administrere kva lag |
+| `bookings/leader_views.py` | Avlysing og enkelttider for lagleiarar |
+| `bookings/views.py` | Lagar vekevisinga og sesongplanen |
 | `bookings/templates/bookings/` | HTML og CSS for sidene |
 | `bookings/admin.py` | Oppsett av administrasjonssida, med godkjenning av brukarar |
 | `bookings/accounts.py`, `account_views.py`, `forms.py` | Brukarar: invitasjon, førespurnader, innlogging |

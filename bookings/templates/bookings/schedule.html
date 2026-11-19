@@ -1,5 +1,5 @@
 {% extends "bookings/base.html" %}
-{% block title %}{% if season %}Treningstider {{ season.name }} – {% endif %}Blixhalli{% endblock %}
+{% block title %}{% if mode == "week" %}{{ week_title }} – {% elif season %}Sesongplan {{ season.name }} – {% endif %}Treningstider Blixhalli{% endblock %}
 {% block head %}
 <style>
   .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
@@ -33,6 +33,11 @@
   .slot .meta { display: block; font-size: .72rem; color: var(--muted); }
   .slot.tentative { border: 2px dashed var(--muted); }
   .slot a { color: inherit; }
+  .slot.kind-avlyst { background: repeating-linear-gradient(135deg, var(--surface) 0 6px, var(--anna) 6px 12px);
+                 opacity: .8; z-index: 0; }
+  .slot.kind-avlyst .title { text-decoration: line-through; }
+  .slot.kind-enkel { z-index: 2; box-shadow: inset 4px 0 0 var(--accent); }
+  .muted { color: var(--muted); }
   .cat-fotball { background: var(--fotball); } .cat-handball { background: var(--handball); }
   .cat-friidrett { background: var(--friidrett); } .cat-trim { background: var(--trim); }
   .cat-volleyball { background: var(--volleyball); } .cat-badminton { background: var(--badminton); }
@@ -62,24 +67,36 @@
 </style>
 {% endblock %}
 {% block content %}
-{% if not season %}
+{% if mode == "season" and not season %}
   <p>Ingen sesongar er lagt inn enno.{% if user.is_staff %} <a href="/admin/bookings/season/add/">Legg til ein sesong</a>.{% endif %}</p>
 {% else %}
   <div class="toolbar">
-    <h2>{{ season.name }}</h2>
+  {% if mode == "week" %}
+    <h2>{{ week_title }}</h2><span class="muted">{{ week_span }}</span>
+    <a class="button" href="{% url 'week' prev_week %}" aria-label="Førre veke">&larr;</a>
+    {% if not is_current_week %}<a class="button" href="{% url 'schedule' %}">Denne veka</a>{% endif %}
+    <a class="button" href="{% url 'week' next_week %}" aria-label="Neste veke">&rarr;</a>
+    <a href="{% url 'season_default' %}">Sesongplan</a>
+    {% if user.is_authenticated %}<a class="button" href="{% url 'new_booking' %}">+ Book enkelttid</a>{% endif %}
+  {% else %}
+    <h2>Sesongplan {{ season.name }}</h2>
     {% if not season.published %}<span class="badge">Utkast</span>{% endif %}
     {% if seasons|length > 1 %}
       <select aria-label="Vel sesong" onchange="location.href = this.value">
-        {% for s in seasons %}<option value="{% if static_export %}{{ s.static_filename }}{% else %}/sesong/{{ s.pk }}/{% endif %}"{% if s == season %} selected{% endif %}>{{ s }}</option>{% endfor %}
+        {% for s in seasons %}<option value="{% if static_export %}{{ s.static_filename }}{% else %}{% url 'season' s.pk %}{% endif %}"{% if s == season %} selected{% endif %}>{{ s }}</option>{% endfor %}
       </select>
     {% endif %}
+    {% if not static_export %}<a href="{% url 'schedule' %}">Denne veka</a>{% endif %}
     {% if user.is_staff and not static_export %}
-      <a class="button" href="/admin/bookings/trainingslot/add/?season={{ season.pk }}">+ Legg til treningstid</a>
+      <a class="button" href="/admin/bookings/trainingslot/add/?season={{ season.pk }}">+ Legg til fast tid</a>
     {% endif %}
+  {% endif %}
   </div>
+  {% if mode == "week" and no_season %}<p class="muted">Ingen publisert sesong gjeld for denne veka.</p>{% endif %}
+  {% if mode == "week" and drafts %}<p class="muted">Inkluderer utkast: {% for s in drafts %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% endfor %} (berre synleg for administratorar).</p>{% endif %}
 
   <div class="day-picker" role="group" aria-label="Vel dag">
-    {% for day in days %}<button type="button" data-day="{{ day.number }}" aria-pressed="false">{{ day.name|slice:":3" }}</button>{% endfor %}
+    {% for day in days %}<button type="button" data-day="{{ day.number }}" aria-pressed="false">{{ day.short|default:day.name|slice:":3" }}</button>{% endfor %}
   </div>
 
   <div class="week">
@@ -92,25 +109,26 @@
           <div class="time{% if t.full_hour %} full{% endif %}" style="grid-row: {{ t.row }}">{% if t.full_hour %}{{ t.label }}{% endif %}</div>
           <div class="gridline{% if t.full_hour %} full{% endif %}" style="grid-row: {{ t.row }}"></div>
         {% endfor %}
-        {% for item in day.slots %}{% with s=item.slot %}
-          <div class="slot cat-{{ s.group.category }}{% if s.tentative %} tentative{% endif %}"
-               style="grid-row: {{ item.row_start }} / {{ item.row_end }}; grid-column: {{ item.col_start }} / {{ item.col_end }}"
-               title="{{ s.group }} · {{ s.start_time|time:'H:i' }}–{{ s.end_time|time:'H:i' }} · {{ s.sections_label }}">
-            {% if user.is_staff and not static_export %}<a href="/admin/bookings/trainingslot/{{ s.pk }}/change/">{{ s.group }}</a>{% else %}{{ s.group }}{% endif %}
-            <span class="meta">{{ s.start_time|time:"H:i" }}–{{ s.end_time|time:"H:i" }} · {{ s.sections_label }}{% if s.tentative %} · ikkje avklart{% endif %}{% if s.note %} · {{ s.note }}{% endif %}{% if s.valid_from or s.valid_to %} · {% if s.valid_from %}frå {{ s.valid_from|date:"j.n." }}{% endif %}{% if s.valid_to %} til {{ s.valid_to|date:"j.n." }}{% endif %}{% endif %}</span>
+        {% for e in day.entries %}
+          <div class="slot cat-{{ e.category }} kind-{{ e.kind }}{% if e.tentative %} tentative{% endif %}"
+               style="grid-row: {{ e.row_start }} / {{ e.row_end }}; grid-column: {{ e.col_start }} / {{ e.col_end }}"
+               title="{{ e.title }} · {{ e.meta }}">
+            {% if e.link %}<a href="{{ e.link }}" class="title">{{ e.title }}</a>{% else %}<span class="title">{{ e.title }}</span>{% endif %}
+            <span class="meta">{{ e.meta }}</span>
           </div>
-        {% endwith %}{% endfor %}
+        {% endfor %}
       </section>
     {% endfor %}
   </div>
 
   <div class="legend">
+    {% if mode == "week" %}<span style="--c: var(--accent)">Enkelttid</span><span style="--c: repeating-linear-gradient(135deg, var(--surface) 0 3px, var(--anna) 3px 6px)">Avlyst (ledig)</span>{% endif %}
     <span style="--c: var(--fotball)">Fotball</span><span style="--c: var(--handball)">Handball</span>
     <span style="--c: var(--friidrett)">Friidrett/turn</span><span style="--c: var(--trim)">Trim</span>
     <span style="--c: var(--volleyball)">Volleyball</span><span style="--c: var(--badminton)">Badminton</span>
     <span style="--c: var(--anna)">Anna</span>
   </div>
-  {% if season.notes %}<div class="notes">{{ season.notes }}</div>{% endif %}
+  {% if mode == "season" and season.notes %}<div class="notes">{{ season.notes }}</div>{% endif %}
 
   <script>
     // På mobil: vis éin dag om gongen. Startar på dagens vekedag.

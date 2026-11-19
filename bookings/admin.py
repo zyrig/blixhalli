@@ -2,7 +2,7 @@
 from django.contrib import admin, messages
 
 from . import accounts
-from .models import AccountRequest, Group, Season, TrainingSlot
+from .models import AccountRequest, Booking, Cancellation, Group, Season, TrainingSlot
 
 admin.site.site_header = "Blixhalli – administrasjon"
 admin.site.site_title = "Blixhalli"
@@ -70,3 +70,19 @@ class AccountRequestAdmin(admin.ModelAdmin):
             accounts.reject(account_request, request.user)
             done += 1
         self.message_user(request, f"{done} førespurnad(er) avslått.", messages.SUCCESS)
+
+
+@admin.register(Cancellation)
+class CancellationAdmin(admin.ModelAdmin):
+    list_display = ["slot", "date", "reason", "created_by"]
+    list_filter = ["slot__group"]
+    date_hierarchy = "date"
+    autocomplete_fields = ["slot"]
+
+
+@admin.register(Booking)
+class BookingAdmin(admin.ModelAdmin):
+    list_display = ["group", "date", "start_time", "end_time", "sections_label", "status", "note", "created_by"]
+    list_filter = ["status", "group__category"]
+    date_hierarchy = "date"
+    autocomplete_fields = ["group"]

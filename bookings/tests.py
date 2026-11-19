@@ -108,7 +108,7 @@ class PageTests(TestCase):
                                     start_time=t(17, 30), end_time=t(18, 30))
 
     def test_schedule_shows_published_season(self):
-        r = self.client.get("/")
+        r = self.client.get("/sesong/")
         self.assertContains(r, "Fotball J12")
         self.assertContains(r, "grid-row: 19 / 21")  # 17:30 er rad 19 når rutenettet startar 09:00
 
@@ -122,7 +122,7 @@ class PageTests(TestCase):
 
     def test_empty_site(self):
         Season.objects.all().delete()
-        self.assertContains(self.client.get("/"), "Ingen sesongar")
+        self.assertContains(self.client.get("/sesong/"), "Ingen sesongar")
 
 
 class StaticExportTests(TestCase):
@@ -222,3 +222,103 @@ class AccountTests(TestCase):
 
     def test_mine_requires_login(self):
         self.assertRedirects(self.client.get("/mine/"), "/logg-inn/?next=/mine/")
+
+
+class LeaderPermissionAndWeekTests(TestCase):
+    """Steg 2: lagleiarar administrerer berre sine eigne lag; avlysingar og enkelttider."""
+
+    def setUp(self):
+        from django.utils import timezone
+        today = timezone.localdate()
+        self.monday = today + datetime.timedelta(days=7 - today.weekday())  # neste måndag
+        self.season = Season.objects.create(name="Test", published=True,
+                                            start_date=datetime.date(2000, 1, 1), end_date=datetime.date(2100, 1, 1))
+        self.j12 = Group.objects.create(name="Handball J12", category="handball")
+        self.g8 = Group.objects.create(name="Fotball G8", category="fotball")
+        self.j12_slot = TrainingSlot.objects.create(season=self.season, group=self.j12, weekday=0,
+                                                    start_time=t(17), end_time=t(18))
+        self.g8_slot = TrainingSlot.objects.create(season=self.season, group=self.g8, weekday=0,
+                                                   start_time=t(18), end_time=t(19))
+        self.kari = User.objects.create_user("kari@example.com", "kari@example.com", "pw", first_name="Kari")
+        self.j12.leaders.add(self.kari)
+        self.client.force_login(self.kari)
+
+    def book(self, group, start=17, end=18, date=None):
+        return self.client.post("/enkelttid/ny/", {
+            "group": group.pk, "date": (date or self.monday).isoformat(), "start_time": f"{start:02d}:00",
+            "end_time": f"{end:02d}:00", "first_section": 1, "last_section": 3, "note": "Ekstratrening"})
+
+    def test_everyone_sees_who_has_which_time(self):
+        self.client.logout()
+        r = self.client.get(f"/veke/{self.monday.isoformat()}/")
+        self.assertContains(r, "Handball J12")
+        self.assertContains(r, "Fotball G8")
+        self.assertNotContains(r, "/avlys/")  # men ingen lenkjer for å endre
+
+    def test_leader_can_cancel_own_slot_but_not_other_teams(self):
+        self.assertEqual(self.client.get(f"/avlys/{self.g8_slot.pk}/").status_code, 403)
+        r = self.client.post(f"/avlys/{self.g8_slot.pk}/", {"date": self.monday.isoformat()})
+        self.assertEqual(r.status_code, 403)
+        r = self.client.post(f"/avlys/{self.j12_slot.pk}/", {"date": self.monday.isoformat(), "reason": "Cup"})
+        self.assertRedirects(r, f"/veke/{self.monday.isoformat()}/")
+        page = self.client.get(f"/veke/{self.monday.isoformat()}/")
+        self.assertContains(page, "Avlyst: Cup")
+        next_week = self.client.get(f"/veke/{(self.monday + datetime.timedelta(days=7)).isoformat()}/")
+        self.assertContains(next_week, f"/avlys/{self.j12_slot.pk}/")      # eigen tid: lenkje
+        self.assertNotContains(next_week, f"/avlys/{self.g8_slot.pk}/")    # andre sine: inga lenkje
+
+    def test_cancel_wrong_weekday_is_rejected(self):
+        r = self.client.post(f"/avlys/{self.j12_slot.pk}/", {"date": (self.monday + datetime.timedelta(days=1)).isoformat()})
+        self.assertContains(r, "har ikkje denne treningstida")
+
+    def test_booking_only_for_own_teams(self):
+        r = self.book(self.g8, 20, 21)
+        self.assertEqual(r.status_code, 200)  # skjemaet blir vist på nytt med feil, laget er ikkje eit gyldig val
+        self.assertTrue(r.context["form"].has_error("group"))
+        from .models import Booking
+        self.assertFalse(Booking.objects.exists())
+
+    def test_booking_on_taken_slot_is_rejected_until_cancelled(self):
+        from .models import Booking
+        r = self.book(self.j12, 18, 19)  # G8 har denne tida
+        self.assertContains(r, "Opptatt")
+        self.assertFalse(Booking.objects.exists())
+        # G8 avlyser, og då er plassen ledig
+        from .models import Cancellation
+        Cancellation.objects.create(slot=self.g8_slot, date=self.monday)
+        r = self.book(self.j12, 18, 19)
+        self.assertRedirects(r, f"/veke/{self.monday.isoformat()}/")
+        self.assertEqual(Booking.objects.get().status, "approved")
+        self.assertContains(self.client.get(f"/veke/{self.monday.isoformat()}/"), "enkelttid")
+
+    def test_double_booking_is_rejected(self):
+        self.assertEqual(self.book(self.j12, 20, 21).status_code, 302)
+        self.assertContains(self.book(self.j12, 20, 21), "Opptatt")
+
+    def test_undo_cancellation_blocked_when_slot_is_taken(self):
+        from .models import Cancellation
+        c = Cancellation.objects.create(slot=self.j12_slot, date=self.monday)
+        boss = User.objects.create_user("boss@example.com", "boss@example.com", "pw", is_staff=True)
+        self.g8.leaders.add(boss)
+        self.client.force_login(boss)
+        self.assertEqual(self.book(self.g8, 17, 18).status_code, 302)
+        self.client.force_login(self.kari)
+        r = self.client.post(f"/avlysing/{c.pk}/angre/", follow=True)
+        self.assertContains(r, "Kan ikkje angre")
+        self.assertTrue(Cancellation.objects.filter(pk=c.pk).exists())
+
+    def test_leader_cannot_delete_other_teams_booking(self):
+        from .models import Booking
+        b = Booking.objects.create(group=self.g8, date=self.monday, start_time=t(20), end_time=t(21))
+        self.assertEqual(self.client.post(f"/enkelttid/{b.pk}/slett/").status_code, 403)
+        self.assertTrue(Booking.objects.filter(pk=b.pk).exists())
+
+    def test_admin_can_manage_all_teams(self):
+        admin = User.objects.create_user("a@example.com", "a@example.com", "pw", is_staff=True)
+        self.client.force_login(admin)
+        r = self.client.post(f"/avlys/{self.g8_slot.pk}/", {"date": self.monday.isoformat()})
+        self.assertEqual(r.status_code, 302)
+
+    def test_past_dates_rejected(self):
+        r = self.book(self.j12, 20, 21, date=datetime.date(2020, 1, 6))
+        self.assertContains(r, "Datoen har vore")

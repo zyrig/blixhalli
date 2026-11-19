@@ -17,14 +17,35 @@
   <h3>Treningstidene våre</h3>
   <div class="card" style="padding:0 8px; overflow-x:auto">
   <table class="list">
-    <tr><th>Sesong</th><th>Dag</th><th>Tid</th><th>Sal</th><th>Lag</th></tr>
     {% for s in slots %}
-      <tr><td>{{ s.season }}</td><td>{{ s.get_weekday_display }}</td>
-          <td>{{ s.start_time|time:"H:i" }}–{{ s.end_time|time:"H:i" }}</td>
-          <td>{{ s.sections_label }}</td><td>{{ s.group }}{% if s.tentative %} <span class="muted">(ikkje avklart)</span>{% endif %}</td></tr>
+      <tr><td><strong>{{ s.get_weekday_display }} {{ s.start_time|time:"H:i" }}–{{ s.end_time|time:"H:i" }}</strong><br>
+              <span class="muted">{{ s.group }} · {{ s.sections_label }} · {{ s.season.name }}{% if s.tentative %} · ikkje avklart{% endif %}</span></td>
+          <td style="text-align:right"><a href="{% url 'cancel_slot' s.pk %}">Avlys ein dato</a></td></tr>
     {% endfor %}
   </table></div>
   {% endif %}
-  <p class="muted">Søknad om nye tider og avlysingar kjem snart.</p>
+  {% if groups %}<p><a class="btn" href="{% url 'new_booking' %}">+ Book enkelttid</a></p>{% endif %}
+
+  {% if cancellations %}
+  <h3>Avlysingar framover</h3>
+  <div class="card" style="padding:0 8px; overflow-x:auto"><table class="list">
+    {% for c in cancellations %}
+      <tr><td>{{ c.date|date:"D j.n." }}</td><td>{{ c.slot.group }}</td>
+          <td>{{ c.slot.start_time|time:"H:i" }}–{{ c.slot.end_time|time:"H:i" }}</td><td>{{ c.reason }}</td>
+          <td><form method="post" action="{% url 'undo_cancellation' c.pk %}">{% csrf_token %}<button class="linklike" type="submit">Angre</button></form></td></tr>
+    {% endfor %}
+  </table></div>
+  {% endif %}
+
+  {% if bookings %}
+  <h3>Enkelttider framover</h3>
+  <div class="card" style="padding:0 8px; overflow-x:auto"><table class="list">
+    {% for b in bookings %}
+      <tr><td>{{ b.date|date:"D j.n." }}</td><td>{{ b.group }}</td>
+          <td>{{ b.start_time|time:"H:i" }}–{{ b.end_time|time:"H:i" }}</td><td>{{ b.sections_label }}</td><td>{{ b.note }}</td>
+          <td><form method="post" action="{% url 'delete_booking' b.pk %}" onsubmit="return confirm('Slette enkelttida?')">{% csrf_token %}<button class="linklike" type="submit">Slett</button></form></td></tr>
+    {% endfor %}
+  </table></div>
+  {% endif %}
 </div>
 {% endblock %}

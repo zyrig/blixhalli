@@ -29,7 +29,8 @@ def mine(request):
         .select_related("group", "season")
         .order_by("-season__name", "weekday", "start_time")
     )
-    context = {"groups": groups, "slots": slots}
+    from .leader_views import upcoming_for
+    context = {"groups": groups, "slots": slots, **upcoming_for(groups)}
     if request.user.is_staff:
         context["pending_requests"] = AccountRequest.objects.filter(status=AccountRequest.PENDING).count()
     return render(request, "bookings/mine.html", context)
