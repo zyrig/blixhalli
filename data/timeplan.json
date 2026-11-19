@@ -1,0 +1,1448 @@
+[
+{
+  "model": "bookings.season",
+  "pk": 1,
+  "fields": {
+    "name": "2026/2027",
+    "start_date": null,
+    "end_date": null,
+    "published": false,
+    "notes": "Fotball:\nTysdag: G2018 - 2017 tar over treningstiden til turn 17-1800 når turn er ferdig.\nTysdag: J 2009 - 2013 starter kl.1800 etter G2018-2017"
+  }
+},
+{
+  "model": "bookings.season",
+  "pk": 2,
+  "fields": {
+    "name": "2025/2026",
+    "start_date": null,
+    "end_date": null,
+    "published": true,
+    "notes": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 1,
+  "fields": {
+    "name": "\"Tassatrim\"",
+    "category": "trim",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 2,
+  "fields": {
+    "name": "Fotball -damelag",
+    "category": "fotball",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 3,
+  "fields": {
+    "name": "Friidrett bootcamp",
+    "category": "friidrett",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 4,
+  "fields": {
+    "name": "Fotball G 2019",
+    "category": "fotball",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 5,
+  "fields": {
+    "name": "Fotball -herrelag",
+    "category": "fotball",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 6,
+  "fields": {
+    "name": "Vik fengsel",
+    "category": "anna",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 7,
+  "fields": {
+    "name": "Handball J11",
+    "category": "handball",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 8,
+  "fields": {
+    "name": "Friidrett - turn 2 grupper (1/2 og 3/4 klasse) Fotball (G8-9) etter nyttår",
+    "category": "friidrett",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 9,
+  "fields": {
+    "name": "Handball J11 og J13",
+    "category": "handball",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 10,
+  "fields": {
+    "name": "Handball 1. og 2.klasse",
+    "category": "handball",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 11,
+  "fields": {
+    "name": "Handball 2. og 3. klasse",
+    "category": "handball",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 12,
+  "fields": {
+    "name": "Badminton",
+    "category": "badminton",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 13,
+  "fields": {
+    "name": "Handball J13",
+    "category": "handball",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 14,
+  "fields": {
+    "name": "Handball J13 og Senior",
+    "category": "handball",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 15,
+  "fields": {
+    "name": "Fotball J (2014/2015)",
+    "category": "fotball",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 16,
+  "fields": {
+    "name": "Fotball J (2009-2013)",
+    "category": "fotball",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 17,
+  "fields": {
+    "name": "Fotball G (2014-2016)",
+    "category": "fotball",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 18,
+  "fields": {
+    "name": "Trim Zumba",
+    "category": "trim",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 19,
+  "fields": {
+    "name": "Volleyball",
+    "category": "volleyball",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 20,
+  "fields": {
+    "name": "Fotball G (2011-2013)",
+    "category": "fotball",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 21,
+  "fields": {
+    "name": "Trim, \"mandagstrening\"",
+    "category": "trim",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 22,
+  "fields": {
+    "name": "Friidrett/sirkel",
+    "category": "friidrett",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 23,
+  "fields": {
+    "name": "Vik Ørsta saman med Sognekraft",
+    "category": "anna",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 24,
+  "fields": {
+    "name": "Fotball damer",
+    "category": "fotball",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 25,
+  "fields": {
+    "name": "Fotball G8",
+    "category": "fotball",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 26,
+  "fields": {
+    "name": "Fotball G/J 2016",
+    "category": "fotball",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 27,
+  "fields": {
+    "name": "Fotball G10-11",
+    "category": "fotball",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 28,
+  "fields": {
+    "name": "Trim, Zumba",
+    "category": "trim",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 30,
+  "fields": {
+    "name": "Vik Fengsel",
+    "category": "anna",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 31,
+  "fields": {
+    "name": "Fotball A-lag, Vik2/ungdomslaga",
+    "category": "fotball",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 32,
+  "fields": {
+    "name": "Handball 1. klasse",
+    "category": "handball",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 33,
+  "fields": {
+    "name": "Handball J10",
+    "category": "handball",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 35,
+  "fields": {
+    "name": "Fotball G12",
+    "category": "fotball",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 36,
+  "fields": {
+    "name": "Fotball J12",
+    "category": "fotball",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 37,
+  "fields": {
+    "name": "Handball J12",
+    "category": "handball",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 38,
+  "fields": {
+    "name": "Friidrett - turn (oktober-november), Fotball J13-14 frå desember",
+    "category": "friidrett",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 39,
+  "fields": {
+    "name": "Handball J12 og Senior",
+    "category": "handball",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 40,
+  "fields": {
+    "name": "Fotball J13-14",
+    "category": "fotball",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 41,
+  "fields": {
+    "name": "Fotball J10-11",
+    "category": "fotball",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 42,
+  "fields": {
+    "name": "Vik Ørsta",
+    "category": "anna",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 44,
+  "fields": {
+    "name": "Trim, \"dametrim\"",
+    "category": "trim",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 45,
+  "fields": {
+    "name": "Fotball Old Boys",
+    "category": "fotball",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 46,
+  "fields": {
+    "name": "Sognekraft -bandy",
+    "category": "anna",
+    "contact": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 1,
+  "fields": {
+    "season": 1,
+    "group": 1,
+    "weekday": 5,
+    "start_time": "10:00:00",
+    "end_time": "12:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": true,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 2,
+  "fields": {
+    "season": 1,
+    "group": 2,
+    "weekday": 6,
+    "start_time": "14:00:00",
+    "end_time": "15:30:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 3,
+  "fields": {
+    "season": 1,
+    "group": 3,
+    "weekday": 4,
+    "start_time": "15:00:00",
+    "end_time": "16:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 4,
+  "fields": {
+    "season": 1,
+    "group": 4,
+    "weekday": 0,
+    "start_time": "15:30:00",
+    "end_time": "16:30:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 5,
+  "fields": {
+    "season": 1,
+    "group": 5,
+    "weekday": 6,
+    "start_time": "15:30:00",
+    "end_time": "17:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 6,
+  "fields": {
+    "season": 1,
+    "group": 6,
+    "weekday": 5,
+    "start_time": "16:30:00",
+    "end_time": "18:30:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 7,
+  "fields": {
+    "season": 1,
+    "group": 7,
+    "weekday": 0,
+    "start_time": "17:00:00",
+    "end_time": "18:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 8,
+  "fields": {
+    "season": 1,
+    "group": 8,
+    "weekday": 1,
+    "start_time": "17:00:00",
+    "end_time": "18:30:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 9,
+  "fields": {
+    "season": 1,
+    "group": 9,
+    "weekday": 2,
+    "start_time": "17:00:00",
+    "end_time": "18:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 10,
+  "fields": {
+    "season": 1,
+    "group": 10,
+    "weekday": 3,
+    "start_time": "17:00:00",
+    "end_time": "18:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 11,
+  "fields": {
+    "season": 1,
+    "group": 11,
+    "weekday": 4,
+    "start_time": "17:00:00",
+    "end_time": "18:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 12,
+  "fields": {
+    "season": 1,
+    "group": 12,
+    "weekday": 6,
+    "start_time": "17:00:00",
+    "end_time": "18:30:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": true,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 13,
+  "fields": {
+    "season": 1,
+    "group": 13,
+    "weekday": 0,
+    "start_time": "18:00:00",
+    "end_time": "19:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 14,
+  "fields": {
+    "season": 1,
+    "group": 14,
+    "weekday": 2,
+    "start_time": "18:00:00",
+    "end_time": "19:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 15,
+  "fields": {
+    "season": 1,
+    "group": 15,
+    "weekday": 3,
+    "start_time": "18:00:00",
+    "end_time": "19:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 16,
+  "fields": {
+    "season": 1,
+    "group": 14,
+    "weekday": 4,
+    "start_time": "18:00:00",
+    "end_time": "19:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 17,
+  "fields": {
+    "season": 1,
+    "group": 16,
+    "weekday": 1,
+    "start_time": "18:30:00",
+    "end_time": "19:30:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 18,
+  "fields": {
+    "season": 1,
+    "group": 16,
+    "weekday": 6,
+    "start_time": "18:30:00",
+    "end_time": "20:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 19,
+  "fields": {
+    "season": 1,
+    "group": 17,
+    "weekday": 0,
+    "start_time": "19:00:00",
+    "end_time": "20:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 20,
+  "fields": {
+    "season": 1,
+    "group": 18,
+    "weekday": 2,
+    "start_time": "19:00:00",
+    "end_time": "20:00:00",
+    "first_section": 1,
+    "last_section": 1,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 21,
+  "fields": {
+    "season": 1,
+    "group": 19,
+    "weekday": 2,
+    "start_time": "19:00:00",
+    "end_time": "20:30:00",
+    "first_section": 2,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 22,
+  "fields": {
+    "season": 1,
+    "group": 20,
+    "weekday": 3,
+    "start_time": "19:00:00",
+    "end_time": "20:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 23,
+  "fields": {
+    "season": 1,
+    "group": 5,
+    "weekday": 4,
+    "start_time": "19:00:00",
+    "end_time": "20:30:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 24,
+  "fields": {
+    "season": 1,
+    "group": 5,
+    "weekday": 1,
+    "start_time": "19:30:00",
+    "end_time": "21:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 25,
+  "fields": {
+    "season": 1,
+    "group": 6,
+    "weekday": 0,
+    "start_time": "20:00:00",
+    "end_time": "21:00:00",
+    "first_section": 1,
+    "last_section": 1,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 26,
+  "fields": {
+    "season": 1,
+    "group": 21,
+    "weekday": 0,
+    "start_time": "20:00:00",
+    "end_time": "21:00:00",
+    "first_section": 2,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 27,
+  "fields": {
+    "season": 1,
+    "group": 22,
+    "weekday": 2,
+    "start_time": "20:00:00",
+    "end_time": "21:00:00",
+    "first_section": 1,
+    "last_section": 1,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 28,
+  "fields": {
+    "season": 1,
+    "group": 2,
+    "weekday": 3,
+    "start_time": "20:00:00",
+    "end_time": "21:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 29,
+  "fields": {
+    "season": 1,
+    "group": 23,
+    "weekday": 2,
+    "start_time": "21:00:00",
+    "end_time": "22:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": true,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 30,
+  "fields": {
+    "season": 2,
+    "group": 1,
+    "weekday": 5,
+    "start_time": "10:00:00",
+    "end_time": "12:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": true,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 31,
+  "fields": {
+    "season": 2,
+    "group": 3,
+    "weekday": 4,
+    "start_time": "15:00:00",
+    "end_time": "16:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 32,
+  "fields": {
+    "season": 2,
+    "group": 24,
+    "weekday": 6,
+    "start_time": "15:00:00",
+    "end_time": "16:30:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 33,
+  "fields": {
+    "season": 2,
+    "group": 25,
+    "weekday": 0,
+    "start_time": "16:00:00",
+    "end_time": "17:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 34,
+  "fields": {
+    "season": 2,
+    "group": 26,
+    "weekday": 1,
+    "start_time": "16:00:00",
+    "end_time": "17:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 35,
+  "fields": {
+    "season": 2,
+    "group": 27,
+    "weekday": 2,
+    "start_time": "16:00:00",
+    "end_time": "17:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 36,
+  "fields": {
+    "season": 2,
+    "group": 28,
+    "weekday": 3,
+    "start_time": "16:00:00",
+    "end_time": "17:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": true,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 37,
+  "fields": {
+    "season": 2,
+    "group": 11,
+    "weekday": 4,
+    "start_time": "16:30:00",
+    "end_time": "17:30:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 38,
+  "fields": {
+    "season": 2,
+    "group": 30,
+    "weekday": 5,
+    "start_time": "16:30:00",
+    "end_time": "18:30:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 39,
+  "fields": {
+    "season": 2,
+    "group": 31,
+    "weekday": 6,
+    "start_time": "16:30:00",
+    "end_time": "18:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 40,
+  "fields": {
+    "season": 2,
+    "group": 32,
+    "weekday": 0,
+    "start_time": "17:00:00",
+    "end_time": "18:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 41,
+  "fields": {
+    "season": 2,
+    "group": 33,
+    "weekday": 1,
+    "start_time": "17:00:00",
+    "end_time": "18:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 42,
+  "fields": {
+    "season": 2,
+    "group": 37,
+    "weekday": 2,
+    "start_time": "17:00:00",
+    "end_time": "18:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 43,
+  "fields": {
+    "season": 2,
+    "group": 35,
+    "weekday": 3,
+    "start_time": "17:00:00",
+    "end_time": "18:30:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 44,
+  "fields": {
+    "season": 2,
+    "group": 36,
+    "weekday": 4,
+    "start_time": "17:30:00",
+    "end_time": "18:30:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 45,
+  "fields": {
+    "season": 2,
+    "group": 37,
+    "weekday": 0,
+    "start_time": "18:00:00",
+    "end_time": "19:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 46,
+  "fields": {
+    "season": 2,
+    "group": 38,
+    "weekday": 1,
+    "start_time": "18:00:00",
+    "end_time": "19:30:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 47,
+  "fields": {
+    "season": 2,
+    "group": 39,
+    "weekday": 2,
+    "start_time": "18:00:00",
+    "end_time": "19:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 48,
+  "fields": {
+    "season": 2,
+    "group": 12,
+    "weekday": 6,
+    "start_time": "18:00:00",
+    "end_time": "19:30:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 49,
+  "fields": {
+    "season": 2,
+    "group": 40,
+    "weekday": 3,
+    "start_time": "18:30:00",
+    "end_time": "20:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 50,
+  "fields": {
+    "season": 2,
+    "group": 31,
+    "weekday": 4,
+    "start_time": "18:30:00",
+    "end_time": "20:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 51,
+  "fields": {
+    "season": 2,
+    "group": 41,
+    "weekday": 0,
+    "start_time": "19:00:00",
+    "end_time": "20:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 52,
+  "fields": {
+    "season": 2,
+    "group": 42,
+    "weekday": 2,
+    "start_time": "19:00:00",
+    "end_time": "20:00:00",
+    "first_section": 1,
+    "last_section": 1,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 53,
+  "fields": {
+    "season": 2,
+    "group": 19,
+    "weekday": 2,
+    "start_time": "19:00:00",
+    "end_time": "21:00:00",
+    "first_section": 2,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 54,
+  "fields": {
+    "season": 2,
+    "group": 31,
+    "weekday": 1,
+    "start_time": "19:30:00",
+    "end_time": "21:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 55,
+  "fields": {
+    "season": 2,
+    "group": 6,
+    "weekday": 0,
+    "start_time": "20:00:00",
+    "end_time": "21:00:00",
+    "first_section": 1,
+    "last_section": 1,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 56,
+  "fields": {
+    "season": 2,
+    "group": 44,
+    "weekday": 0,
+    "start_time": "20:00:00",
+    "end_time": "21:00:00",
+    "first_section": 2,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 57,
+  "fields": {
+    "season": 2,
+    "group": 22,
+    "weekday": 2,
+    "start_time": "20:00:00",
+    "end_time": "21:00:00",
+    "first_section": 1,
+    "last_section": 1,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 58,
+  "fields": {
+    "season": 2,
+    "group": 45,
+    "weekday": 3,
+    "start_time": "20:00:00",
+    "end_time": "21:30:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 59,
+  "fields": {
+    "season": 2,
+    "group": 24,
+    "weekday": 4,
+    "start_time": "20:00:00",
+    "end_time": "21:30:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 60,
+  "fields": {
+    "season": 2,
+    "group": 28,
+    "weekday": 1,
+    "start_time": "21:00:00",
+    "end_time": "22:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": true,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 61,
+  "fields": {
+    "season": 2,
+    "group": 46,
+    "weekday": 2,
+    "start_time": "21:00:00",
+    "end_time": "22:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+}
+]

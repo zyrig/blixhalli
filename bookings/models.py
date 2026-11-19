@@ -40,6 +40,11 @@ class Season(models.Model):
     def __str__(self):
         return self.name if self.published else f"{self.name} (utkast)"
 
+    @property
+    def static_filename(self):
+        """Filnamn i den statiske versjonen (GitHub Pages)."""
+        return f"sesong-{self.name.replace('/', '-')}.html"
+
 
 class Group(models.Model):
     """Ei gruppe som trenar i hallen, t.d. "Handball J13"."""

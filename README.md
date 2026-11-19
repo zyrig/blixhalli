@@ -49,6 +49,22 @@ brukar. Tekst med «?» eller «Forslag» blir merkt som *ikkje avklart*. Legg t
 Etter importen bør du sjå over tidene. Merknader som «etter nyttår» blir ikkje
 tolka, så set **gjeld frå / gjeld til** for hand der det trengst.
 
+## Førehandsvising på GitHub Pages
+
+Ein versjon av vekeplanen som berre kan lesast, ligg på
+https://zyrig.github.io/blixhalli/. GitHub byggjer han på nytt kvar gong noko
+blir pusha til `main` (sjå `.github/workflows/pages.yml`).
+
+Data kjem frå `data/timeplan.json`. Pages-sida og repoet er offentlege, så
+fila skal ikkje innehalde namn på personar. Slik oppdaterer du ho etter at du
+har endra tider lokalt:
+
+```bash
+python manage.py dumpdata bookings --indent 2 -o data/timeplan.json
+```
+
+For å hente dataa inn i ein tom lokal database: `python manage.py loaddata data/timeplan.json`.
+
 ## Kvar ting ligg
 
 | Fil | Kva ho gjer |

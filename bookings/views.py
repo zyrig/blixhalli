@@ -1,8 +1,5 @@
 """Views: Python-funksjonar som lagar sidene."""
-import datetime
-
 from django.shortcuts import get_object_or_404, render
-from django.utils import timezone
 
 from .models import SECTIONS, WEEKDAYS, Season
 
@@ -13,19 +10,32 @@ def _minutes(t):
     return t.hour * 60 + t.minute
 
 
+def visible_seasons(user):
+    seasons = Season.objects.all()
+    if not (user and user.is_staff):
+        seasons = seasons.filter(published=True)
+    return seasons
+
+
+def default_season(seasons):
+    return seasons.filter(published=True).first() or seasons.first()
+
+
 def schedule(request, season_id=None):
     """Vekeplanen for ein sesong, lagt opp som rutenett slik som i reknearket."""
-    seasons = Season.objects.all()
-    if not request.user.is_staff:
-        seasons = seasons.filter(published=True)
-
+    seasons = visible_seasons(request.user)
     if season_id is not None:
         season = get_object_or_404(seasons, pk=season_id)
     else:
-        season = seasons.filter(published=True).first() or seasons.first()
+        season = default_season(seasons)
+    return render(request, "bookings/schedule.html", schedule_context(season, seasons))
 
+
+def schedule_context(season, seasons, static_export=False):
+    """Alt malen treng for å teikne vekeplanen. Blir òg brukt av export_static."""
+    context = {"season": season, "seasons": seasons, "static_export": static_export}
     if season is None:
-        return render(request, "bookings/schedule.html", {"season": None, "seasons": seasons})
+        return context
 
     slots = list(season.slots.select_related("group"))
 
@@ -53,12 +63,5 @@ def schedule(request, season_id=None):
             })
         days.append({"number": number, "name": name, "slots": day_slots})
 
-    return render(request, "bookings/schedule.html", {
-        "season": season,
-        "seasons": seasons,
-        "days": days,
-        "times": times,
-        "sections": SECTIONS,
-        "total_rows": len(times) + 1,
-        "today": timezone.localdate().weekday(),
-    })
+    context.update({"days": days, "times": times, "sections": SECTIONS})
+    return context

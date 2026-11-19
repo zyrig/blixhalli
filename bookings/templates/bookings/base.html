@@ -34,8 +34,9 @@
 </head>
 <body>
   <header>
-    <h1><a href="/" style="text-decoration:none">Treningstider Blixhalli</a></h1>
-    {% if user.is_staff %}
+    <h1><a href="{% if static_export %}index.html{% else %}/{% endif %}" style="text-decoration:none">Treningstider Blixhalli</a></h1>
+    {% if static_export %}
+    {% elif user.is_staff %}
       <a href="/admin/">Administrer</a>
       <form method="post" action="/admin/logout/" style="margin:0">{% csrf_token %}
         <button type="submit" style="background:none;border:0;color:inherit;text-decoration:underline;font:inherit;cursor:pointer;padding:0">Logg ut</button>

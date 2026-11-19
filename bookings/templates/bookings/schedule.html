@@ -69,11 +69,11 @@
     <h2>{{ season.name }}</h2>
     {% if not season.published %}<span class="badge">Utkast</span>{% endif %}
     {% if seasons|length > 1 %}
-      <select aria-label="Vel sesong" onchange="location.href='/sesong/' + this.value + '/'">
-        {% for s in seasons %}<option value="{{ s.pk }}"{% if s == season %} selected{% endif %}>{{ s }}</option>{% endfor %}
+      <select aria-label="Vel sesong" onchange="location.href = this.value">
+        {% for s in seasons %}<option value="{% if static_export %}{{ s.static_filename }}{% else %}/sesong/{{ s.pk }}/{% endif %}"{% if s == season %} selected{% endif %}>{{ s }}</option>{% endfor %}
       </select>
     {% endif %}
-    {% if user.is_staff %}
+    {% if user.is_staff and not static_export %}
       <a class="button" href="/admin/bookings/trainingslot/add/?season={{ season.pk }}">+ Legg til treningstid</a>
     {% endif %}
   </div>
@@ -96,7 +96,7 @@
           <div class="slot cat-{{ s.group.category }}{% if s.tentative %} tentative{% endif %}"
                style="grid-row: {{ item.row_start }} / {{ item.row_end }}; grid-column: {{ item.col_start }} / {{ item.col_end }}"
                title="{{ s.group }} · {{ s.start_time|time:'H:i' }}–{{ s.end_time|time:'H:i' }} · {{ s.sections_label }}">
-            {% if user.is_staff %}<a href="/admin/bookings/trainingslot/{{ s.pk }}/change/">{{ s.group }}</a>{% else %}{{ s.group }}{% endif %}
+            {% if user.is_staff and not static_export %}<a href="/admin/bookings/trainingslot/{{ s.pk }}/change/">{{ s.group }}</a>{% else %}{{ s.group }}{% endif %}
             <span class="meta">{{ s.start_time|time:"H:i" }}–{{ s.end_time|time:"H:i" }} · {{ s.sections_label }}{% if s.tentative %} · ikkje avklart{% endif %}{% if s.note %} · {{ s.note }}{% endif %}{% if s.valid_from or s.valid_to %} · {% if s.valid_from %}frå {{ s.valid_from|date:"j.n." }}{% endif %}{% if s.valid_to %} til {{ s.valid_to|date:"j.n." }}{% endif %}{% endif %}</span>
           </div>
         {% endwith %}{% endfor %}
@@ -121,7 +121,7 @@
       buttons.forEach(b => b.setAttribute("aria-pressed", b.dataset.day === day));
     }
     buttons.forEach(b => b.addEventListener("click", () => show(b.dataset.day)));
-    show("{{ today }}");
+    show(String((new Date().getDay() + 6) % 7));  // JS: sundag=0, vi: måndag=0
   </script>
 {% endif %}
 {% endblock %}

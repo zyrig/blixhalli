@@ -123,3 +123,16 @@ class PageTests(TestCase):
     def test_empty_site(self):
         Season.objects.all().delete()
         self.assertContains(self.client.get("/"), "Ingen sesongar")
+
+
+class StaticExportTests(TestCase):
+    def test_export_writes_one_page_per_season_with_relative_links(self):
+        Season.objects.create(name="2025/2026", published=True)
+        Season.objects.create(name="2026/2027", published=False)
+        with tempfile.TemporaryDirectory() as out:
+            call_command("export_static", "--out", out, stdout=open("/dev/null", "w"))
+            import os
+            self.assertEqual(sorted(os.listdir(out)), [".nojekyll", "index.html", "sesong-2025-2026.html"])
+            html = open(os.path.join(out, "index.html"), encoding="utf-8").read()
+            self.assertNotIn('href="/', html)   # GitHub Pages ligg under /blixhalli/
+            self.assertNotIn("Logg inn", html)
