@@ -126,7 +126,7 @@
     "facility": 1,
     "name": "2026/2027",
     "start_date": null,
-    "end_date": null,
+    "end_date": "2027-03-21",
     "published": false,
     "notes": "Fotball:\nTysdag: G2018 - 2017 tar over treningstiden til turn 17-1800 når turn er ferdig.\nTysdag: J 2009 - 2013 starter kl.1800 etter G2018-2017"
   }
@@ -138,7 +138,7 @@
     "facility": 1,
     "name": "2025/2026",
     "start_date": null,
-    "end_date": null,
+    "end_date": "2026-03-29",
     "published": true,
     "notes": ""
   }
@@ -216,17 +216,6 @@
     "organization": 5,
     "name": "Handball J11",
     "category": "handball",
-    "contact": "",
-    "leaders": []
-  }
-},
-{
-  "model": "bookings.group",
-  "pk": 8,
-  "fields": {
-    "organization": 4,
-    "name": "Friidrett - turn 2 grupper (1/2 og 3/4 klasse) Fotball (G8-9) etter nyttår",
-    "category": "friidrett",
     "contact": "",
     "leaders": []
   }
@@ -530,17 +519,6 @@
 },
 {
   "model": "bookings.group",
-  "pk": 38,
-  "fields": {
-    "organization": 4,
-    "name": "Friidrett - turn (oktober-november), Fotball J13-14 frå desember",
-    "category": "friidrett",
-    "contact": "",
-    "leaders": []
-  }
-},
-{
-  "model": "bookings.group",
   "pk": 39,
   "fields": {
     "organization": 5,
@@ -612,6 +590,39 @@
     "organization": 6,
     "name": "Sognekraft -bandy",
     "category": "anna",
+    "contact": "",
+    "leaders": []
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 47,
+  "fields": {
+    "organization": 4,
+    "name": "Friidrett - turn 2 grupper (1/2 og 3/4 klasse)",
+    "category": "friidrett",
+    "contact": "",
+    "leaders": []
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 48,
+  "fields": {
+    "organization": 2,
+    "name": "Fotball G8-9 (2017-2018)",
+    "category": "fotball",
+    "contact": "",
+    "leaders": []
+  }
+},
+{
+  "model": "bookings.group",
+  "pk": 49,
+  "fields": {
+    "organization": 4,
+    "name": "Friidrett - turn",
+    "category": "friidrett",
     "contact": "",
     "leaders": []
   }
@@ -748,14 +759,14 @@
   "fields": {
     "facility": 1,
     "season": 1,
-    "group": 8,
+    "group": 47,
     "weekday": 1,
     "start_time": "17:00:00",
     "end_time": "18:30:00",
     "first_section": 1,
     "last_section": 3,
     "valid_from": null,
-    "valid_to": null,
+    "valid_to": "2026-12-31",
     "tentative": false,
     "note": ""
   }
@@ -1432,14 +1443,14 @@
   "fields": {
     "facility": 1,
     "season": 2,
-    "group": 38,
+    "group": 49,
     "weekday": 1,
     "start_time": "18:00:00",
     "end_time": "19:30:00",
     "first_section": 1,
     "last_section": 3,
-    "valid_from": null,
-    "valid_to": null,
+    "valid_from": "2025-10-01",
+    "valid_to": "2025-11-30",
     "tentative": false,
     "note": ""
   }
@@ -1709,6 +1720,42 @@
     "first_section": 1,
     "last_section": 3,
     "valid_from": null,
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 62,
+  "fields": {
+    "facility": 1,
+    "season": 1,
+    "group": 48,
+    "weekday": 1,
+    "start_time": "17:00:00",
+    "end_time": "18:00:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": "2027-01-05",
+    "valid_to": null,
+    "tentative": false,
+    "note": ""
+  }
+},
+{
+  "model": "bookings.trainingslot",
+  "pk": 63,
+  "fields": {
+    "facility": 1,
+    "season": 2,
+    "group": 40,
+    "weekday": 1,
+    "start_time": "18:00:00",
+    "end_time": "19:30:00",
+    "first_section": 1,
+    "last_section": 3,
+    "valid_from": "2025-12-02",
     "valid_to": null,
     "tentative": false,
     "note": ""
